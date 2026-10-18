@@ -146,6 +146,45 @@ Die Attribute werden am Weather-Device gesetzt und in FHEMWEB angeboten.
 `beispiel.fhem` und `homemode_geosphere.fhem` enthalten weitere Beispiele.
 Jede Befehlszeile in der FHEMWEB-Kommandozeile einzeln ausführen.
 
+## GeoSphere-Abrufgrenzen
+
+Stand: 18.10.2026. Für die **Dataset-API** unter
+`dataset.api.hub.geosphere.at` nennt GeoSphere folgende Grenzen:
+
+- **5 HTTP-Anfragen pro Sekunde.**
+- **240 HTTP-Anfragen pro Stunde.**
+- **Kein gesondertes Tageslimit in der verlinkten Dokumentation angegeben.**
+  240 Anfragen pro Stunde entsprechen rechnerisch 5.760 Anfragen in 24 Stunden.
+  Das ist kein eigenständiges Tageskontingent; die Sekunden- und Stundengrenze
+  gelten weiterhin.
+
+Bei Überschreitung antwortet der Server mit **HTTP 429 – Too Many Requests**.
+Die Antwortheader enthalten die verbleibenden Anfragen und die Zeit bis zum
+Zurücksetzen des Limits, unter anderem `x-ratelimit-remaining-hour` und
+`ratelimit-reset`.
+
+### Bedeutung für FHEM
+
+`interval=300` bedeutet zwölf Aktualisierungszyklen pro Stunde bzw. 288 pro
+24 Stunden. Ein Zyklus ist nicht gleich einer HTTP-Anfrage: Stationswerte,
+Prognosen, Nowcast und Metadaten können separate Anfragen auslösen.
+Caches vermeiden einen Teil dieser Abrufe. Bei der automatischen Stationswahl
+kommen Prüfungen mehrerer Stationskandidaten hinzu. Stunden- und Tagesprognose
+nutzen denselben NWP-Datensatz.
+
+Die Grenze ist kein eigenes Kontingent pro FHEM-Device. Weitere Devices,
+HTTPMOD-Abfragen und andere Anwendungen sind bei der Abrufplanung mit zu
+berücksichtigen. Kurze Intervalle und häufige manuelle Aktualisierungen
+erzeugen nicht automatisch neuere Wetterdaten.
+
+Die genannten Grenzen beziehen sich auf die Dataset-API für Messwerte,
+Prognosen und Nowcast. Für die separate Warn-API unter
+`openapi.hub.geosphere.at/warnapi/v1/` wird damit keine identische Grenze
+zugesichert.
+
+Quelle: [GeoSphere Dataset API – Request Limit](https://dataset.api.hub.geosphere.at/v1/docs/user-guide/request-limit.html).
+Maßgeblich sind die jeweils aktuellen Angaben des Anbieters.
+
 ## Standort, Höhe und Stationswahl
 
 geoSphereAltitude ist die örtliche Geländehöhe in Metern über Meeresspiegel,
