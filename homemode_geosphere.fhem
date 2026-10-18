@@ -1,0 +1,15 @@
+# FHEMWEB command line / fhem.cfg: execute each line as a separate step.
+# Preconditions: the GeoSphere Weather device exists and reports fresh observations.
+# These are targeted changes to an existing myHomemode device, not a replacement definition.
+attr myHomemode HomeWeatherDevice s.global.wetter.geosphere.weather
+# Remove only if currently set. Weather now supplies its own temperature.
+deleteattr myHomemode HomeSensorTemperatureOutside
+# Current station observations have no observed weather condition or apparent temperature.
+attr myHomemode HomeTextWeatherShort Außentemperatur %TEMPERATURE% °C, Luftfeuchtigkeit %HUMIDITY%%, Luftdruck %PRESSURE% hPa.
+attr myHomemode HomeTextWeatherLong Außentemperatur %TEMPERATURE% °C bei %HUMIDITY%% Luftfeuchtigkeit. Der auf Meereshöhe reduzierte Luftdruck beträgt %PRESSURE% hPa, die Windgeschwindigkeit %WIND% km/h.
+attr myHomemode HomeTextWeatherForecastToday %DAY% %CONDITION%, Temperaturen zwischen %LOW% und %HIGH% °C.
+# After confirming each change, request a new Weather update as a separate step.
+set s.global.wetter.geosphere.weather update
+# Verify myHomemode temperature, humidity, pressure and wind against the Weather device.
+# Save only after successful verification.
+# save

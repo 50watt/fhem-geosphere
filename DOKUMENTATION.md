@@ -1,0 +1,351 @@
+# GeoSphereAPI 0.2.8 für FHEM Weather
+
+Beta-Provider für österreichische Stationsmesswerte, Stundenprognosen,
+aggregierte Tagesprognosen, optionale Warnungen und 15-Minuten-Niederschlagsnowcast.
+Code: GPL-2.0-or-later. Daten: GeoSphere Austria, CC BY 4.0.
+Kein API-Schlüssel erforderlich. Keine offizielle FHEM-Aufnahme behauptet.
+
+## Änderungen gegenüber 0.2.6
+
+- Gemessener Taupunkt TP, Globalstrahlung GLOW und Sonnenscheindauer SO.
+- Stundenprognosen für ssrd-Globalstrahlung und sund-Sonnenscheindauer.
+- Aus Modelltemperatur/Feuchte berechneter Prognosetaupunkt mit expliziter Quelle.
+- Tagesmengen aus verfügbaren vollständigen Stundenintervallen: Gesamtniederschlag,
+  flüssiger Regen, Schneefall als Wasseräquivalent und Sonnenscheindauer.
+- Eigene Abdeckung und Samplezahl pro Größe; Mitternacht und 23/25-Stunden-Tage
+  korrekt berücksichtigt. Fehlende Werte sind keine Null.
+- Separate summaryCondition für den verfügbaren Tageszeitraum. Die bestehenden
+  offiziellen condition/icon bleiben auf die repräsentative Stunde bezogen.
+- API-only: kein Weather-Kernpatch und kein Patch-Vorbereitungsskript.
+
+Einzelheiten: CHANGELOG.md, FHEM_ANPASSUNGEN.md und TESTERGEBNIS.md.
+
+## Voraussetzungen und Dateien
+
+FHEM Weather mit Namespace-API-Ladeschnittstelle unter
+lib/FHEM/APIs/Weather/; Namespace- und ältere monolithische Weather-
+Referenzkerne werden getestet. Perl ab 5.16 mit JSON::PP, POSIX, Time::Local,
+Scalar::Util, Encode und Unicode::Normalize. FHEM stellt HttpUtils für
+nichtblockierendes HTTP/TLS sowie FHEM::Meta bereit. Eigenständige
+Syntax-/Parsertests brauchen keinen vollständigen FHEM-Server.
+Python 3 wird nur für Installer und Testhilfen benötigt.
+
+- lib/FHEM/APIs/Weather/GeoSphereAPI.pm: einzige regulär installierte Datei.
+- beispiel.fhem: Beispiel ohne private Standortkoordinaten.
+- homemode_geosphere.fhem: gezielte HomeMode-Attribute, kein Modulersatz.
+- tests/: reproduzierbare Offline-Tests sowie optionaler echter Live-Abruf.
+- references/: Prüfkopien und Quellen, keine Installationsdateien.
+
+## Installation und Upgrade
+
+Linux/SSH – zunächst nur entpacken:
+
+~~~bash
+python3 -m zipfile -e /home/pi/GeoSphereAPI-0.2.8.zip /home/pi
+~~~
+
+Erwartet: Verzeichnis /home/pi/GeoSphereAPI-0.2.8. Anschließend getrennt
+prüfen; jeden Block als eigenen Arbeitsschritt ausführen und Ergebnis abwarten.
+
+Linux/SSH:
+
+~~~bash
+python3 /home/pi/GeoSphereAPI-0.2.8/install.py --check-only
+~~~
+
+Erwartet: GeoSphereAPI.pm syntax OK und erkannte Weather-Schnittstelle.
+Noch keine Änderung der installierten Datei.
+
+Linux/SSH – erst nach erfolgreicher Prüfung:
+
+~~~bash
+sudo python3 /home/pi/GeoSphereAPI-0.2.8/install.py
+~~~
+
+Erwartet: Sicherung der vorherigen API-Datei, Installation, SHA256. Der
+Installer ändert keine FHEM-Konfiguration und führt keinen Reload aus.
+Danach separat einen kontrollierten FHEM-Neustart planen; ein normales
+reload des Weather-Moduls lädt einen bereits per require geladenen Provider
+nicht zuverlässig neu. Nach Aktivierung apiVersion=0.2.8 prüfen.
+
+FHEMWEB-Kommandozeile – erst nach Installation/Syntaxprüfung, eigener Schritt:
+
+~~~text
+shutdown restart
+~~~
+
+Erwartet nach Wiederanlauf und Wetterupdate: apiVersion=0.2.8.
+Für bestehende Geräte sind außer korrekt gesetzter Forecast-Auswahl keine
+neuen Pflichtattribute erforderlich. Keine Datenbankmigration notwendig.
+Privater Betriebsnachweis liegt bis 0.2.7 vor; 0.2.8 ändert nur die Maintainer-Angaben.
+
+## Gerätekonfiguration
+
+beispiel.fhem enthält separate FHEMWEB-/fhem.cfg-Zeilen. Nicht unbesehen
+als Stapel in die FHEMWEB-Kommandozeile kopieren.
+
+FHEMWEB-Kommandozeile – Anlage am globalen Standort:
+
+~~~text
+defmod s.global.wetter.geosphere.weather Weather API=GeoSphereAPI interval=300 lang=de
+~~~
+
+Danach als einzelne Schritte forecast hourly,daily, alerts 1 und bei Bedarf
+geoSphereNowcast 1 setzen. Alias, Kommentar, Raum, Eventkontrolle und Logging
+stehen in der Beispieldatei. Global latitude/longitude müssen gültig sein.
+Eine explizite location=Breite,Länge in der DEF überschreibt den globalen Ort.
+
+Optionen im API-Argument:
+station:auto oder Stationsnummer; cachemaxage:600, forecastcache:1800,
+timeout:20 (1..120), observationmaxage:1800, forecastmaxage:32400,
+nowcast:0 oder nowcast:1. Optionen werden durch Komma getrennt.
+Die Standardgrenze für Modellalter ist neun Stunden, nicht die Prognoselänge.
+Auch ein junges Modell braucht einen brauchbaren zukünftigen Zeithorizont.
+
+forecast hourly oder daily genügt ebenfalls. Ohne Auswahl werden keine
+NWP-Daten abgefragt; Status disabled ist dann beabsichtigt. Der gleiche
+Stundendatensatz liefert beide Reihen. Weather entscheidet über die Ausgabe.
+forecastLimit steuert die Zahl veröffentlichter Einträge pro Reihe; Standard 5,
+0 unbegrenzt. 24 ist ein praktikables Stundenlimit, erzeugt aber viele Readings.
+
+geoSphereNowcast (0/1) überschreibt die API-Option nowcast.
+geoSphereStation überschreibt die API-Option station. Sprache: de oder en.
+
+## Standort, Höhe und Stationswahl
+
+geoSphereAltitude ist die örtliche Geländehöhe in Metern über Meeresspiegel,
+keine Gebäude-/Stockwerkshöhe. Erlaubt -500 bis 9000 m.
+Ohne eigenes Attribut wird global altitude nur übernommen, wenn der
+Gerätestandort mit den globalen Koordinaten übereinstimmt.
+Ein entferntes Gerät erbt nicht versehentlich die Höhe der Wohnung.
+
+Automatische Bewertung:
+Entfernung in km + absoluter Höhenunterschied in m / 20.
+Ein Höhenfehler von 100 m entspricht somit fünf zusätzlichen Bewertungspunkten.
+Das ist eine dokumentierte Heuristik, kein meteorologischer Qualitätsbeweis.
+Bei bekannter Zielhöhe erhalten Stationen ohne Höhenmetadaten 50 Zusatzpunkte;
+ohne Zielhöhe zählt nur Entfernung. Die acht bestbewerteten Kandidaten werden
+auf frische Pflichtmesswerte TL/RF/FF/PRED geprüft. Die beste brauchbare
+Station wird gewählt und gespeichert. Danach kein stilles Stationshopping;
+für Neuwahl Auswahl/Höhe/Standort ändern oder ausdrücklich neu definieren.
+
+Das Dropdown enthält Namen, ID und Entfernung und wird aus offiziellen
+Metadaten aufgebaut. Manuelle ID-/Dropdownauswahl bleibt möglich.
+stationSelectionMethod, stationSelectionScore, stationAltitudeDifference_m,
+stationDistanceKm und locationAltitudeSource machen die Wahl nachvollziehbar.
+
+Metadaten-Cache 24 Stunden, Stationsmesswerte lokal bis cachemaxage.
+Intervall 300 bedeutet Abrufprüfung alle fünf Minuten, nicht neue Messungen
+alle fünf Minuten: TAWES liefert typischerweise Zehn-Minuten-Messungen.
+measurementTime und validity prüfen, nicht nur den FHEM-Reading-Zeitstempel.
+
+## Prognosen und Wetterzustand
+
+hfc1 ist der erste zukünftige Stundenzeitpunkt. Lokale Kalendertage bestimmen
+fc1=heute, fc2=morgen. Fehlen heute alle Modellstunden, ist fc1_coverage=missing,
+samples=0, Temperatur leer und condition=Unbekannt. Die Indexposition bleibt
+korrekt; es wird keine Temperatur erfunden. forecastDaysAvailable zählt die
+Kalenderslots einschließlich dieses ausdrücklich leeren Slots.
+
+coverage=partial kennzeichnet nur teilweise abgedeckte Tage.
+low_c/high_c und tempLow/tempHigh sind Minima/Maxima verfügbarer Stundenwerte,
+keine garantierten meteorologischen Tagesextrema. periodStart, periodEnd,
+samples und minMaxScope zeigen den Ausschnitt. DST-Tage mit 23/25 Stunden
+werden berücksichtigt.
+
+GeoSphere sy-Symbole 1–32 werden auf deutsche/englische Texte und vorhandene
+FHEM Weather-Icons abgebildet. geoSphereSymbol und geoSphereSymbolName bleiben
+erhalten. Ein fehlendes/unbekanntes Symbol nutzt eine explizit als ungefähr
+gekennzeichnete Ableitung aus Bewölkung/Niederschlag.
+Tageszustand und Tagesicon beschreiben die repräsentative vorhandene Stunde,
+nicht den ganzen Tag. representativeTime und conditionSource weisen darauf hin.
+cloudCover ist dagegen der Mittelwert der vorhandenen Tagesstunden.
+Eine separate astronomische Tag-/Nacht-Iconumschaltung ist nicht implementiert.
+
+Aktuelle Stationsdaten enthalten keinen beobachteten Wetterzustand. Deshalb
+code=48, condition=Wetterzustand nicht beobachtet und keine vorgetäuschte
+aktuelle Sonne/Wolke aus dem Prognosemodell. Gefühlte Temperatur bleibt leer.
+Stations-Taupunkt und Strahlungs-/Sonnenscheinprognosen sind seit 0.2.7 vorhanden.
+UV-Index, Sichtweite, Sonnenzeiten und fertige PV-Ertragsprognosen sind nicht
+integriert. Die zusätzliche Strahlungsprognose allein ergibt noch keinen PV-Ertrag.
+
+## Niederschlag: nicht alle Regenfelder bedeuten dasselbe
+
+| Reading | Herkunft und Zeitraum |
+| --- | --- |
+| rain10min_mm | Stationsmessung, vergangene zehn Minuten, mm |
+| hfcN_precipitation | tp: gesamter flüssiger/fester Niederschlag der Modellstunde, mm Wasseräquivalent |
+| hfcN_rain1h | rain: nur flüssiger Regen derselben prognostizierten Modellstunde, mm |
+| hfcN_snowWaterEquivalent | sf: Schneefall als Wasseräquivalent, keine Schneehöhe |
+| rain15m_NN_mm | Nowcast-Niederschlagsmenge eines Viertelstundenintervalls |
+| rainNextHour_mm | Summe aus vier Nowcast-Viertelstunden, einschließlich bereits laufender Viertelstunde |
+
+hfcN_precipitationPeriodStart und precipitationPeriodEnd bezeichnen das
+Intervall bis zum jeweiligen Stundenzeitstempel. precipitationUnit=mm.
+Diese Grenzen gelten auch für rain1h und snowWaterEquivalent.
+Kein Alias tp→rain1h: Schnee darf nicht als flüssiger Regen ausgegeben werden.
+Fehlt rain, bleibt rain1h leer. Tägliche rain1h-Werte bleiben leer. rainTotal_mm ist die separate flüssige
+Regensumme. precipitation, snowWaterEquivalent und sunshineDuration_s werden
+seit 0.2.7 über die verfügbaren Stundenintervalle des lokalen Tages summiert.
+
+Vor einer Umstellung bestehender Automationen prüfen: Messung oder Prognose?
+Gesamtniederschlag oder nur Regen? Welche Zeitspanne und Einheit?
+Ein aktuelles rain1h einer anderen API ist kein Stundenprognosewert.
+Ein hfcN_rain1h lässt sich nur dann gezielt ersetzen, wenn Zeitraum und Bedeutung
+passen. Es gibt keinen aus einer einzelnen Zehn-Minuten-Messung hochgerechneten
+aktuellen Stundenregen und keine erfundene Regenwahrscheinlichkeit.
+
+## Optionaler 15-Minuten-Nowcast
+
+GeoSphere INCA nowcast-v1-15min-1km wird für Gerätekoordinaten abgefragt.
+Raster ca. 1 km, Viertelstundenwerte, typischerweise drei Stunden Horizont.
+rain15m_NN_periodStart und rain15m_NN_time sind die tatsächlichen Zeitgrenzen.
+rainNextHour=yes bei mindestens einem positiven Wert, no bei vier bestätigten
+Nullwerten, unknown bei Fehler/fehlenden/unbrauchbaren Daten.
+rainNextHourFrom/To zeigen das Fenster: nicht exakt die gleitenden nächsten
+60 Minuten ab dem aktuellen Abrufzeitpunkt.
+nextRainPeriodStart/End zeigen einen nassen Modellabschnitt, keinen exakten
+Regenbeginn am Haus. rr ist Niederschlag, einschließlich festen Anteilen.
+
+Nowcast-Modellalter maximal 2700 Sekunden, Rohdaten-Cache maximal 900 Sekunden.
+Die Intervalle werden bei Wetterupdates neu auf die aktuelle Zeit bezogen;
+nowcastFetchedAt zeigt den echten Abruf und wird durch Cachebenutzung nicht
+fälschlich erneuert. Fehler bestätigen niemals Trockenheit. Auslaufende
+rain15m-Indizes werden entfernt. Status nowcastStatus/nowcastValidity beachten.
+
+## Warnungen und Fehlerzustände
+
+alerts 1 aktiviert koordinatenbezogene GeoSphere-Warnungen. Nicht die Station,
+sondern der Gerätestandort bestimmt das Warngebiet.
+Nur eine erfolgreiche leere Antwort bestätigt null Warnungen. Fehler lassen
+warningsCount/warnCount unknown; zuletzt bekannte Warntexte können erhalten
+bleiben, sind bei Fehlerstatus aber keine bestätigte aktuelle Lage.
+Warnstufe, Typ, Beginn/Ende, aktive/kommende Phase und Gebiet werden geprüft.
+Abruf-Cache 300 s, maximale weiterverwendbare Warnungsdaten 900 s.
+
+status/validity betreffen vor allem Stationsmesswerte;
+forecastStatus/forecastValidity, nowcastStatus/nowcastValidity und
+warningsStatus/warningsValidity die jeweiligen Datenquellen.
+Forecastfehler blockieren frische Messwerte und nachfolgende Warnungen nicht.
+Ein noch brauchbares gecachtes Modell kann bei fehlgeschlagener Modellauffrischung
+weiterhin ok sein; forecastLastError nennt den fehlgeschlagenen Refresh.
+Abgelaufene Modelle sind nie deswegen ok, weil die Station ebenfalls ausfällt.
+
+Die Abfragekette bleibt sequentiell: Metadaten/Stationswahl → Station → NWP
+(wenn ausgewählt) → Warnungen → Nowcast. Scheitert bereits die Station,
+werden Warnungen/Nowcast in diesem Zyklus nicht separat neu abgefragt und
+ihre Gültigkeit wird unbekannt. Vollständig unabhängige Quell-Timer sind
+nicht Bestandteil dieses Releases. Bei dauerhaft ausbleibender FHEM-Ausführung
+kann kein Provider allein eine laufende Automation absichern.
+
+Vor Steuerbefehlen Quelle=ok, plausible Readingwerte und Mess-/Modellalter
+prüfen. Für Tagesprognosen außerdem coverage und numerische Temperaturen.
+Leere Werte sind keine Null, unknown ist nicht no.
+
+## Lokale Zeiten und FHEM-Anpassungen
+
+Sichtbare Zeitreadings verwenden die lokale Zeitzone des FHEM-Prozesses:
+TT.MM.JJJJ HH:MM:SS CET/CEST bei Europe/Vienna. Numerische Epoch-Werte bleiben
+erhalten. location legt keine eigene Zeitzone fest.
+
+FHEM_ANPASSUNGEN.md beschreibt Logging/Eventkontrolle und HomeMode.
+Historische Datenbankwerte werden nicht umformatiert. Die reguläre
+Standortänderung erfolgt über die Gerätedefinition. Der unveränderte Weather-
+Kern lässt GeoSphere nicht über seine feste newLocation-Providerliste zu.
+Dieses Release enthält keine Kernänderung und benötigt für den normalen
+Betrieb keine solche Änderung.
+
+## Taupunkt, Strahlung und Sonnenschein
+
+dewPoint ist der gemessene Stationsparameter TP in °C. globalRadiation
+verwendet GLOW, Einheit W/m². sunshineDuration_s verwendet SO, Sekunden der
+vorherigen zehn Minuten; sunshinePeriodStart/End zeigen die Zeitgrenzen.
+Fehlende oder unplausible optionale Werte bleiben leer.
+
+hfcN_globalRadiation verwendet ssrd in W/m². hfcN_sunshineDuration_s verwendet
+sund, Sekunden der Modellstunde bis zum Zeitstempel. Einheiten bleiben erhalten:
+W/m² ist eine Strahlungsleistung pro Fläche und kein Energie- oder PV-Ertrag.
+Ohne nachgewiesenen zeitlichen Mittelungsbezug wird daraus keine Tagesenergie
+berechnet. Tägliche globalRadiation/dewPoint gehören zur representativeTime.
+
+hfcN_dewPoint wird mangels direktem NWP-Taupunktparameter aus 2t/2r berechnet:
+alpha = ln(RH/100) + 17.67*T/(243.5+T), Td = 243.5*alpha/(17.67-alpha).
+Das ist eine Bolton/Magnus-Näherung über Wasser. dewPointSource bezeichnet
+sie ausdrücklich als calculated; bei RH=0/fehlender Feuchte bleibt sie leer.
+Sie ist kein von GeoSphere gelieferter Taupunktwert und keine gefühlte Temperatur.
+
+## Tagesmengen und Tageszusammenfassung
+
+Ein stündlicher Mengenwert gilt für die Stunde vor seinem Zeitstempel.
+Für einen lokalen Kalendertag werden ausschließlich vollständige Modellintervalle
+innerhalb 00:00 bis zum nächsten 00:00 aufsummiert. Die bei Tagesbeginn endende
+Stunde gehört zum Vortag; die bei Tagesende endende Stunde gehört zum betrachteten
+Tag. Das berücksichtigt auch Tage mit 23 oder 25 Stunden.
+
+precipitationCoverage, rainCoverage, snowCoverage und sunshineCoverage:
+complete = ganzer Kalendertag vorhanden; partial = alle vorhandenen Werte sind
+gültig, aber der Tag ist nur teilweise abgedeckt; unknown = mindestens ein Wert
+fehlt/ist ungültig, daher leere Summe; missing = keine geeigneten Intervalle.
+precipitationSamples, rainSamples, snowSamples und sunshineSamples zählen die
+gültigen Werte. precipitationExpectedSamples gibt die örtliche Tageslänge an.
+precipitationPeriodStart/End und sunshinePeriodStart/End zeigen den wirklichen
+Ausschnitt. Ein einzelner Ausfall bei sund macht nicht die Regensumme ungültig.
+
+Alle Tagesmengen bleiben Modellprognosen, einschließlich eventuell bereits
+vergangener verfügbarer Modellintervalle. Sie sind keine gemessene Tagesbilanz.
+Auch bei vollständigen Temperatur-Stichproben kann die Mengenabdeckung abweichen,
+weil die nächste Mitternachtsstunde noch fehlen kann.
+
+summaryCondition ergänzt eine näherungsweise Bewölkungsklasse aus vorhandenen
+Stundenstichproben sowie precipitationHours/snowfallHours. Als nasse Stunde zählt
+eine Intervallmenge ab 0.1 mm Wasseräquivalent. Bei fehlenden Mengen bleiben
+die Häufigkeiten unbekannt. Diese eigene Zusammenfassung ist kein offizielles
+GeoSphere-Ganztagessymbol; bestehende condition/code/icon bleiben unverändert.
+
+## Schnittstelle, Stil und Wartung
+
+Öffentliche Methoden: new, setLocation, setForecast, setAlerts, setFetchTime,
+getFetchTime, getWeather, setRetrieveData. Daten werden über die vorhandene
+Weather-Rückruffunktion veröffentlicht. HTTP ist im Produktionsprovider
+nichtblockierend. UTF-8 wird genau einmal an der FHEM-Grenze kodiert.
+
+Die nötigen FHEM-Erweiterungen für providerbezogene Attribute und Entfernen
+überzähliger Readings bleiben ausdrücklich gekapselte Kompatibilitätsadapter,
+weil Weather dafür noch keine vollständigen Provider-Hooks anbietet.
+Es gibt keine direkte Änderung fremder Geräte und keine direkten Schreibzugriffe
+auf den userattr-Hash. Die Runtime-Attributliste des eigenen Geräts wird über
+setDevAttrList ergänzt; bestehende Weather-Attribute bleiben erhalten.
+Vor upstream-Aufnahme diese Anbindung mit dem Weather-Maintainer abstimmen.
+
+FHEM::Meta liest die eingebetteten META.json-Daten im normalen FHEM-Betrieb.
+JSON::PP bleibt absichtlich die Kernmodul-Abhängigkeit statt eines mehrfachen
+JSON-Backend-Fallbacks. .perltidyrc dokumentiert die Codeformatierung.
+Maintainer: **50watt**. Support über das FHEM-Wetterforum.
+
+## Tests und Veröffentlichung
+
+Siehe TESTERGEBNIS.md für ausgeführte Tests und bekannte Prüfgrenzen.
+0.2.7 wurde privat erfolgreich betrieben; 0.2.8 ändert nur die Maintainer-Angaben.
+Offline-Vertragstests verwenden echte Weather-Quellen mit simulierten
+FHEM-Diensten; sie ersetzen keinen vollständigen produktiven FHEM/HomeMode-Test.
+
+Mit vorhandenem SVN-Zugang: zuerst im Wetterforum vorstellen und den
+Weather-Maintainer wegen des API-Vertrags ansprechen.
+Kein Pull Request gegen den reinen fhem-mirror. Details in EINREICHUNG.md.
+Die Veröffentlichung erfolgt als GitHub-Testquelle. Eine SVN-Aufnahme oder
+Kontaktaufnahme ist damit nicht verbunden.
+
+## Quellen und Lizenzen
+
+- [TAWES](https://data.hub.geosphere.at/de/dataset/tawes-v1-10min)
+- [NWP v2](https://data.hub.geosphere.at/de/dataset/nwp-v2-1h-1km)
+- [NWP-Metadaten](https://dataset.api.hub.geosphere.at/v1/timeseries/forecast/nwp-v2-1h-1km/metadata)
+- [INCA-Nowcast](https://data.hub.geosphere.at/en/dataset/nowcast-v1-15min-1km)
+- [Warn-API](https://openapi.hub.geosphere.at/warnapi/v1/)
+- [FHEM Weather](https://github.com/fhem/fhem-mirror/blob/main/fhem/lib/FHEM/Core/Weather.pm)
+- Daten: GeoSphere Austria, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/);
+  Attribution bei Veröffentlichung sichtbar erhalten.
+- Aufbereitung: Einheitenumrechnung, lokale Kalendertage, Stationsbewertung,
+  symbolische Zustandsabbildung, Warnungsaufbereitung, Nowcast-Intervallsummen.
+- Programmcode GPL-2.0-or-later, siehe LICENSE. Prüfkopien behalten ihre
+  eigenen Copyright- und Lizenzhinweise.

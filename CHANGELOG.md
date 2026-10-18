@@ -1,0 +1,86 @@
+# Changelog
+
+## 0.2.8 – 2026-10-18 – beta, API-only
+
+- Set the maintainer to 50watt in API diagnostics, FHEM metadata and support documentation.
+- No weather data processing or FHEM core changes.
+
+## 0.2.7 – 2026-10-18 – beta, API-only
+
+- Add observed dewPoint from station TP, globalRadiation from GLOW and sunshineDuration_s from SO. Keep unavailable optional observations empty and expose source, units and local sunshine interval boundaries.
+- Add hourly globalRadiation from ssrd and sunshineDuration_s from sund. Derive and label an approximate forecast dewPoint from temperature/RH; do not represent it as an official GeoSphere dew-point parameter.
+- Aggregate daily total precipitation, liquid rainTotal_mm, snow water equivalent and sunshine duration from full hourly intervals contained in each local calendar day. Handle 23/25-hour DST days and midnight attribution. Expose independent completeness/sample counts and actual accumulation boundaries; missing values are not zero.
+- Add a separate derived summaryCondition with cloud classification and precipitation/snowfall-hour counts (threshold 0.1 mm). Existing official representative-hour condition/icon behavior remains compatible.
+- Remove Weather patch, preparation tool and patched-core tests from this release. The installer changes only GeoSphereAPI.pm; no Weather/HomeMode core changes are required.
+- Keep logging selection unchanged. Global radiation is not converted into PV production or an assumed daily energy yield. UV, apparent temperature and SYNOP integration are not introduced.
+
+## 0.2.6 – 2026-10-18 – beta
+
+- Revalidate forecast age on observation failure; remove expired forecast records on the error path instead of claiming up-to-date model data.
+- Check provider object identity before all asynchronous callbacks and attribute registration. Ignore responses for deleted/redefined devices.
+- Preserve calendar slots for HomeMode at midnight: an unavailable today has coverage=missing and empty extrema; tomorrow remains fc2, including DST boundaries.
+- Honour disabled Weather forecasts: skip the NWP request while retaining observations, warnings and optional nowcast.
+- Add hourly rain1h from the explicit liquid rain parameter. Keep precipitation as total liquid/solid water equivalent, expose local interval boundaries, and never alias total precipitation to liquid rain.
+- Add META.json/FHEM metadata registration, support information and consistent Perl::Tidy formatting. Isolate attribute registration in an identity-checked FHEM adapter; migrate legacy userattr through FHEM commands instead of writing its hash directly.
+- Keep temporary setLocation coordinates across updates; changed DEF supersedes them. Provide a separate minimal Weather newLocation review patch and a guarded candidate-only preparation tool. The normal installer does not modify Weather core or configuration.
+- Refresh documentation, logging examples, SVN submission instructions and regression coverage. No private coordinates or fabricated maintainer identity.
+
+## 0.2.5 – 2026-10-18 – experimental
+
+- Map official GeoSphere sy 1–32 to localized descriptions and existing FHEM Weather icons. Preserve raw codes and official English symbol names.
+- Hourly official symbols take precedence over the cloud/precipitation approximation. Missing/unsupported symbols retain an explicitly marked fallback.
+- Daily symbols describe the existing representative hour, explicitly disclosed by conditionSource and representativeTime; no claim of an official whole-day symbol.
+- Current observations and apparent temperature remain unchanged. No extra HTTP request, dependency or configuration attribute.
+- Regression checks include original Weather cores, UTF-8, official symbols conflicting with cloud cover, and fallback behavior.
+
+
+## 0.2.4 – 2026-10-18 – experimental
+
+- Optionaler 15-Minuten-Niederschlagsnowcast für die Gerätekoordinaten; `geoSphereNowcast` oder API-Option `nowcast`.
+- Viertelstundenmengen, vierperiodige Regensumme, explizite Zeitfenster und eigener Gültigkeits-/Fehlerstatus; Fehler bedeuten unknown.
+- Nicht mehr verfügbare Viertelstundenreadings werden entfernt; Standortwechsel verwirft alte Daten und verspätete Antworten.
+- Alias und Kommentar im Konfigurationsbeispiel, Dokumentation der Niederschlagsintervalle und Cachegrenzen.
+- Keine automatischen Konfigurationsänderungen, keine Umstellung vorhandener Regenautomationen.
+
+## 0.2.3 – 2026-10-17 – experimental
+
+- Format existing visible timestamp readings in local process time with CET/CEST
+  instead of UTC/RFC-style mixed formats; retain numeric epochs and raw model data.
+- Add human-readable forecastAge and DST transition tests.
+- Increase default forecastmaxage to nine hours; retain future-coverage validation.
+- Add targeted HomeMode setup and weather templates without unavailable apparent
+  temperature or observed weather conditions. Configuration is never auto-applied.
+- Document the intentional timestamp reading format change for custom consumers.
+
+## 0.2.2 – 2026-10-17 – experimental
+
+- Isolate forecast timeouts, HTTP/JSON/schema errors and stale model references
+  from fresh station observations and the subsequent warnings retrieval.
+- Expose forecastStatus, forecastValidity, forecastLastError and forecastAge_s.
+- Remove unusable old forecast readings; recover them on a fresh model response.
+- Keep the existing six-hour model age limit unchanged.
+- Add 39 forecast-isolation checks and 12 additional assertions per Weather core.
+- Station failures still use the existing overall Weather error path.
+
+## 0.2.1 – 2026-10-17 – experimental
+
+- Add altitude-aware automatic station ranking and explicit height provenance.
+- Do not inherit home altitude for an unrelated device location.
+- Reevaluate automatic selections after altitude changes and the 0.2.0 upgrade.
+- Register provider attributes at construction and retain Weather's base AttrList.
+- Keep station dropdown choices in runtime .AttrList, remove old generated userattr
+  declarations and recognisable orphan list fragments without removing the selection.
+- Add altitude, upgrade and Weather contract regression tests.
+- Complete installation, troubleshooting, attribution and submission documentation.
+- Replace private example/test coordinates with a documented public station location.
+- Record the unsuccessful external live check caused by stale forecast data.
+
+## 0.2.0 – 2026-10-17 – experimental
+
+- Fix FHEM UTF-8 boundary and consistent daily weather descriptions.
+- Add global/device location precedence, station metadata and manual/automatic selection.
+- Add optional location-specific official GeoSphere warnings and separate error states.
+
+## 0.1.0 – 2026-10-17 – prototype
+
+- Initial standalone Weather provider: station observations and model forecasts.

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.bak*
+*.ERR
+*.LOG
+*.tdy
+SHA256SUMS

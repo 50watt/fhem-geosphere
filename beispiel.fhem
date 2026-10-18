@@ -1,0 +1,24 @@
+# FHEMWEB command line / fhem.cfg: execute each line as a separate step.
+# Global coordinates are used unless location is explicitly set in the definition.
+defmod s.global.wetter.geosphere.weather Weather API=GeoSphereAPI interval=300 lang=de
+attr s.global.wetter.geosphere.weather alias Wetter (GeoSphere)
+attr s.global.wetter.geosphere.weather room System->Wetter_Verkehr
+attr s.global.wetter.geosphere.weather icon weather_cloudy
+attr s.global.wetter.geosphere.weather forecast hourly,daily
+attr s.global.wetter.geosphere.weather forecastLimit 24
+attr s.global.wetter.geosphere.weather alerts 1
+attr s.global.wetter.geosphere.weather geoSphereNowcast 1
+attr s.global.wetter.geosphere.weather event-on-change-reading .*
+attr s.global.wetter.geosphere.weather DbLogInclude temperature,rain10min_mm,measurementTime,rainNextHour,nowcastReferenceTime
+attr s.global.wetter.geosphere.weather comment GeoSphere Austria: Stationsmesswerte mit höhengewichteter Stationswahl, Stundenprognose, 15-Minuten-Niederschlagsnowcast und Unwetterwarnungen. Prognosen und Warnungen gelten für den Gerätestandort, nicht die Messstation. Zeitangaben lokal. Status jeder Datenquelle vor Automationen prüfen. Daten: GeoSphere Austria, CC BY 4.0.
+set s.global.wetter.geosphere.weather update
+# Optional: set the actual local ground elevation in metres above sea level.
+# attr s.global.wetter.geosphere.weather geoSphereAltitude 200
+# A remote device needs its own altitude; global altitude is used only at the global coordinates.
+# After metadata retrieval: optional manual station selection, then a separate update.
+# attr s.global.wetter.geosphere.weather geoSphereStation WIEN_HOHE_WARTE__11035__0.0km
+# Select the exact entry generated for your own location, or use auto.
+# attr s.global.wetter.geosphere.weather geoSphereStation auto
+# Only after verifying readings and warnings status:
+# attr myHomemode HomeWeatherDevice s.global.wetter.geosphere.weather
+# No push messages or device control are configured by this file.
