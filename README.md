@@ -2,9 +2,11 @@
 
 Testversion 0.2.8 · Maintainer: **50watt**
 
-GeoSphere Austria: österreichische Stationsmesswerte, Stunden- und abgeleitete
-Tagesprognosen, Viertelstunden-Niederschlagsnowcast und Wetterwarnungen.
-Kein API-Schlüssel erforderlich.
+GeoSphereAPI bringt österreichische Stationsmesswerte, Stundenprognosen und daraus
+abgeleitete Tagesprognosen, einen 15-Minuten-Niederschlagsnowcast und standortbezogene
+Wetterwarnungen in das FHEM-Weather-Modul. Ohne API-Schlüssel, mit automatischer
+Stationswahl unter Berücksichtigung der Entfernung und Höhenlage sowie
+nachvollziehbaren Angaben zu Datenalter und Gültigkeit.
 
 ## Über GeoSphere Austria
 
