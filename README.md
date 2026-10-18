@@ -4,7 +4,7 @@ Testversion 0.2.8 · Maintainer: **50watt**
 
 GeoSphere Austria: österreichische Stationsmesswerte, Stunden- und abgeleitete
 Tagesprognosen, Viertelstunden-Niederschlagsnowcast und Wetterwarnungen.
-Kein API-Schlüssel erforderlich. Keine Änderung am Weather-Modul nötig.
+Kein API-Schlüssel erforderlich.
 
 ## Über GeoSphere Austria
 
@@ -29,12 +29,7 @@ GeoSphereAPI ist eine eigenständige FHEM-Anbindung von 50watt.
 - Standortkoordinaten in Österreich, entweder in den globalen FHEM-Attributen
   `latitude`/`longitude` oder als `location=Breite,Länge` in der Definition.
 
-Ein bereits eingerichtetes Weather-Device ist nicht erforderlich.
-
 ## Installation und Updates
-
-Vor einem Upgrade eine Sicherung der bisherigen GeoSphereAPI.pm
-anlegen. Die Updatequelle installiert ausschließlich die API-Datei.
 
 **FHEMWEB-Kommandozeile**, als eigenen Schritt ausführen:
 
@@ -69,8 +64,19 @@ nutzt die in FHEM global eingestellten Koordinaten; diese müssen zum gewünscht
 define wetter_geosphere Weather API=GeoSphereAPI interval=300 lang=de
 ```
 
-Erwartet nach der ersten Datenaktualisierung: Stationsmesswerte und apiVersion=0.2.8. Ein bestehendes Weather-Device
-kann parallel weiterlaufen. Weitere Attribute, Prognosen, Warnungen, Gültigkeit
+Die API wählt automatisch eine geeignete GeoSphere-Wetterstation in der Nähe.
+Dabei berücksichtigt sie die Entfernung, den Höhenunterschied zum Standort
+und die Verfügbarkeit aktueller Messwerte. Die Standorthöhe kann über
+`geoSphereAltitude` angegeben werden; am globalen Standort wird sonst das
+globale Attribut `altitude` verwendet, sofern gesetzt. Ohne Höhenangabe erfolgt
+die Bewertung nach Entfernung und verfügbaren Messwerten.
+
+Alternativ lässt sich die Station in FHEMWEB über das Dropdown des Attributs
+`geoSphereStation` manuell auswählen. Die Auswahlliste steht nach dem Laden
+der Stationsmetadaten bereit.
+
+Erwartet nach der ersten Datenaktualisierung: Stationsmesswerte und apiVersion=0.2.8.
+Weitere Attribute, Prognosen, Warnungen, Gültigkeit
 und bekannte Grenzen sind in [DOKUMENTATION.md](DOKUMENTATION.md) beschrieben.
 
 ## Rückmeldungen und Grenzen
