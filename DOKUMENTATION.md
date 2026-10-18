@@ -130,19 +130,6 @@ Die Attribute werden am Weather-Device gesetzt und in FHEMWEB angeboten.
 - **`disable`**: `1` deaktiviert den Wetterabruf, `0` lässt ihn zu.
   Ohne Attribut ist der Abruf aktiviert.
 
-### Allgemeine FHEM-Attribute
-
-- **`alias`**: Anzeigename des Devices.
-- **`room`**: Zuordnung zu einem oder mehreren FHEMWEB-Räumen.
-- **`comment`**: frei wählbarer Beschreibungstext.
-- **`icon`**: Symbol für das Device in FHEMWEB.
-- **`event-on-change-reading`**: erzeugt für passende Readings nur bei
-  einer Wertänderung ein Event. `.*` bezieht sich auf alle Readings.
-- **`DbLogInclude`**: Auswahl der zu protokollierenden Readings bei
-  entsprechend eingerichtetem DbLog, beispielsweise
-  `temperature,rain10min_mm,measurementTime,rainNextHour,nowcastReferenceTime`.
-  Die tatsächliche Protokollierung hängt auch von der DbLog-Konfiguration ab.
-
 `beispiel.fhem` und `homemode_geosphere.fhem` enthalten weitere Beispiele.
 Jede Befehlszeile in der FHEMWEB-Kommandozeile einzeln ausführen.
 
