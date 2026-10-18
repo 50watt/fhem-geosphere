@@ -12,8 +12,9 @@ Kein API-Schlüssel erforderlich. Maintainer: **50watt**.
 - Aus Modelltemperatur/Feuchte berechneter Prognosetaupunkt mit expliziter Quelle.
 - Tagesmengen aus verfügbaren vollständigen Stundenintervallen: Gesamtniederschlag,
   flüssiger Regen, Schneefall als Wasseräquivalent und Sonnenscheindauer.
-- Eigene Abdeckung und Samplezahl pro Größe; Mitternacht und 23/25-Stunden-Tage
-  korrekt berücksichtigt. Fehlende Werte sind keine Null.
+- Für jede Tagesmenge wird getrennt angegeben, ob der ganze Tag erfasst ist
+  und wie viele Stundenwerte vorliegen. Bei der Zeitumstellung werden Tage mit
+  23 oder 25 Stunden berücksichtigt. Fehlende Werte sind keine Null.
 - Separate summaryCondition für den verfügbaren Tageszeitraum. Die bestehenden
   offiziellen condition/icon bleiben auf die repräsentative Stunde bezogen.
 - Anbindung über das vorhandene Weather-Modul.
@@ -45,35 +46,105 @@ erst nach einer Datenaktualisierung ist die geladene API-Version sichtbar.
 
 ## Definition
 
-beispiel.fhem enthält separate FHEMWEB-/fhem.cfg-Zeilen. Nicht unbesehen
-als Stapel in die FHEMWEB-Kommandozeile kopieren.
-
-FHEMWEB-Kommandozeile – Anlage am globalen Standort:
+Weather-Device in der **FHEMWEB-Kommandozeile** definieren:
 
 ~~~text
 define wetter_geosphere Weather API=GeoSphereAPI interval=300 lang=de
 ~~~
 
-Danach als einzelne Schritte forecast hourly,daily, alerts 1 und bei Bedarf
-geoSphereNowcast 1 setzen. Alias, Kommentar, Raum, Eventkontrolle und Logging
-stehen in der Beispieldatei. Global latitude/longitude müssen gültig sein.
-Eine explizite location=Breite,Länge in der DEF überschreibt den globalen Ort.
+Das Beispiel verwendet die globalen Standortkoordinaten. Für einen anderen
+Standort wird zusätzlich `location=Breite,Länge` in der Definition angegeben.
 
-Optionen im API-Argument:
-station:auto oder Stationsnummer; cachemaxage:600, forecastcache:1800,
-timeout:20 (1..120), observationmaxage:1800, forecastmaxage:32400,
-nowcast:0 oder nowcast:1. Optionen werden durch Komma getrennt.
-Die Standardgrenze für Modellalter ist neun Stunden, nicht die Prognoselänge.
-Auch ein junges Modell braucht einen brauchbaren zukünftigen Zeithorizont.
+### Parameter der Definition
 
-forecast hourly oder daily genügt ebenfalls. Ohne Auswahl werden keine
-NWP-Daten abgefragt; Status disabled ist dann beabsichtigt. Der gleiche
-Stundendatensatz liefert beide Reihen. Weather entscheidet über die Ausgabe.
-forecastLimit steuert die Zahl veröffentlichter Einträge pro Reihe; Standard 5,
-0 unbegrenzt. 24 ist ein praktikables Stundenlimit, erzeugt aber viele Readings.
+- **`<name>`**: frei wählbarer, eindeutiger FHEM-Devicename; im Beispiel
+  `wetter_geosphere`.
+- **`Weather`**: FHEM-Modultyp.
+- **`API=GeoSphereAPI`**: wählt GeoSphere als Datenquelle. Dieser Parameter
+  muss für die GeoSphere-Anbindung angegeben werden.
+- **`location=Breite,Länge`**: geografische Koordinaten mit Dezimalpunkt,
+  Breitengrad zuerst. Ohne Angabe werden die globalen Attribute
+  `latitude` und `longitude` verwendet.
+- **`interval=Sekunden`**: Aktualisierungsintervall des Weather-Devices.
+  Standard des Weather-Moduls: `3600`; im Beispiel `300` (fünf Minuten).
+  Das Intervall bestimmt die Aktualisierungsprüfung, nicht den Messtakt
+  der Station. Die API berücksichtigt zusätzlich ihre Cachezeiten.
+- **`lang=de|en`**: Sprache der von der API erzeugten Wettertexte.
+  Ohne Angabe gilt das globale Attribut `language`, ersatzweise `de`.
+  GeoSphereAPI unterstützt `de` und `en`.
 
-geoSphereNowcast (0/1) überschreibt die API-Option nowcast.
-geoSphereStation überschreibt die API-Option station. Sprache: de oder en.
+### Optionen innerhalb von API=GeoSphereAPI
+
+Optionen werden mit Kommas an den API-Namen angehängt. Jede Option verwendet
+einen Doppelpunkt zwischen Name und Wert, beispielsweise
+`API=GeoSphereAPI,station:auto,forecastmaxage:32400`.
+
+- **`station:auto|Stationsnummer`**: automatische Stationswahl oder feste
+  Stationsnummer. Standard: `auto`. Das Attribut `geoSphereStation` hat Vorrang.
+- **`cachemaxage:Sekunden`**: Cachezeit für die Wiederverwendung bereits
+  abgerufener Stationswerte. Standard: `600` (zehn Minuten).
+  Veraltete Messwerte werden dadurch nicht gültig.
+- **`forecastcache:Sekunden`**: Cachezeit des abgerufenen Prognosedatensatzes.
+  Standard: `1800` (30 Minuten). Die Auswahl der zukünftigen Stunden und
+  Tageswerte wird bei der Verarbeitung auf die aktuelle Zeit bezogen.
+- **`timeout:Sekunden`**: Zeitlimit je HTTP-Anfrage.
+  Standard: `20`; erlaubt sind `1` bis `120`.
+- **`observationmaxage:Sekunden`**: höchstes zulässiges Alter einer
+  Stationsmessung, gerechnet ab ihrer Messzeit.
+  Standard: `1800` (30 Minuten).
+- **`forecastmaxage:Sekunden`**: höchstes zulässiges Alter des Prognosemodells,
+  gerechnet ab seiner Referenzzeit. Standard: `32400` (neun Stunden).
+  Dies ist nicht die Länge des Prognosezeitraums.
+- **`nowcast:0|1`**: schaltet den Viertelstunden-Niederschlagsnowcast aus
+  oder ein. Standard: `0`. Das Attribut `geoSphereNowcast` hat Vorrang.
+
+### GeoSphere-Attribute
+
+Die Attribute werden am Weather-Device gesetzt und in FHEMWEB angeboten.
+
+- **`geoSphereStation`**: `auto`, eine Stationsnummer oder ein Eintrag aus
+  dem Stations-Dropdown. Die Liste wird nach dem Laden der Stationsmetadaten
+  mit Stationsnamen, Nummern und Entfernungen gefüllt. Ohne Attribut gilt
+  die API-Option `station`, ersatzweise `auto`.
+- **`geoSphereAltitude`**: Geländehöhe des Standorts in Metern über dem
+  Meeresspiegel, keine Stockwerks- oder Montagehöhe. Erlaubt: `-500` bis
+  `9000`. Ohne Attribut wird das globale `altitude` nur bei übereinstimmenden
+  Standortkoordinaten verwendet. Fehlt auch diese Höhe, erfolgt die
+  Stationsbewertung ohne Höhenvergleich.
+- **`geoSphereNowcast`**: `0` deaktiviert, `1` aktiviert den
+  Viertelstunden-Niederschlagsnowcast. Ohne Attribut gilt die API-Option
+  `nowcast`, ersatzweise `0`.
+
+### Weather-Attribute
+
+- **`forecast`**: `hourly`, `daily` oder `hourly,daily`.
+  Aktiviert Stundenprognosen (`hfcN_...`), Tagesprognosen (`fcN_...`) oder
+  beide. Ohne Attribut werden keine NWP-Prognosen abgefragt;
+  `forecastStatus=disabled` ist dann beabsichtigt.
+- **`forecastLimit`**: maximale Anzahl veröffentlichter Prognoseeinträge
+  je Reihe. Standard: `5`; `0` bedeutet unbegrenzt.
+  `24` ermöglicht bis zu 24 Stundenprognosen, erzeugt aber mehr Readings.
+  Das Attribut verlängert nicht den von GeoSphere gelieferten Prognosezeitraum.
+- **`alerts`**: `0` deaktiviert, `1` aktiviert standortbezogene
+  Wetterwarnungen. Standard: `0`.
+- **`disable`**: `1` deaktiviert den Wetterabruf, `0` lässt ihn zu.
+  Ohne Attribut ist der Abruf aktiviert.
+
+### Allgemeine FHEM-Attribute
+
+- **`alias`**: Anzeigename des Devices.
+- **`room`**: Zuordnung zu einem oder mehreren FHEMWEB-Räumen.
+- **`comment`**: frei wählbarer Beschreibungstext.
+- **`icon`**: Symbol für das Device in FHEMWEB.
+- **`event-on-change-reading`**: erzeugt für passende Readings nur bei
+  einer Wertänderung ein Event. `.*` bezieht sich auf alle Readings.
+- **`DbLogInclude`**: Auswahl der zu protokollierenden Readings bei
+  entsprechend eingerichtetem DbLog, beispielsweise
+  `temperature,rain10min_mm,measurementTime,rainNextHour,nowcastReferenceTime`.
+  Die tatsächliche Protokollierung hängt auch von der DbLog-Konfiguration ab.
+
+`beispiel.fhem` und `homemode_geosphere.fhem` enthalten weitere Beispiele.
+Jede Befehlszeile in der FHEMWEB-Kommandozeile einzeln ausführen.
 
 ## Standort, Höhe und Stationswahl
 
