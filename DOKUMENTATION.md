@@ -146,6 +146,24 @@ Die Attribute werden am Weather-Device gesetzt und in FHEMWEB angeboten.
 `beispiel.fhem` und `homemode_geosphere.fhem` enthalten weitere Beispiele.
 Jede Befehlszeile in der FHEMWEB-Kommandozeile einzeln ausführen.
 
+## Aktualisierung der Daten
+
+| Datenquelle | Neue Daten bei GeoSphere | Zeitliche Auflösung |
+| --- | --- | --- |
+| [TAWES-Stationsmesswerte](https://data.hub.geosphere.at/de/dataset/tawes-v1-10min) | Alle zehn Minuten | Zehn Minuten |
+| [INCA-Nowcast](https://data.hub.geosphere.at/en/dataset/nowcast-v1-15min-1km) | Alle 15 Minuten | Viertelstundenwerte, bis drei Stunden voraus |
+| [NWP-Prognose](https://data.hub.geosphere.at/de/dataset/nwp-v2-1h-1km) | Neuer Modelllauf alle drei Stunden | Stundenwerte, bis 60 Stunden voraus |
+| Abgeleitete Tagesprognose | Auf Basis desselben NWP-Datensatzes | Lokale Kalendertage |
+| [Wetterwarnungen](https://data.hub.geosphere.at/de/dataset/warnungen-v1) | Variabel | Abhängig von der Warnsituation |
+
+Mess- und Modellzeiten sind keine garantierten Veröffentlichungszeiten.
+Die Bereitstellung kann später erfolgen. Das FHEM-Intervall und die API-Caches
+bestimmen zusätzlich, wann neue Daten eingelesen werden.
+
+Für die Aktualität die Readings `measurementTime`, `forecastReferenceTime`
+und `nowcastReferenceTime` sowie den jeweiligen Gültigkeitsstatus prüfen.
+Ein kürzeres Abrufintervall erzeugt keine zusätzlichen Messwerte oder Modellläufe.
+
 ## GeoSphere-Abrufgrenzen
 
 Stand: 18.10.2026. Für die **Dataset-API** unter
