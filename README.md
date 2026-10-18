@@ -6,10 +6,34 @@ GeoSphere Austria: österreichische Stationsmesswerte, Stunden- und abgeleitete
 Tagesprognosen, Viertelstunden-Niederschlagsnowcast und Wetterwarnungen.
 Kein API-Schlüssel erforderlich. Keine Änderung am Weather-Modul nötig.
 
+## Über GeoSphere Austria
+
+[GeoSphere Austria](https://www.geosphere.at/de/ueber-uns/portraet) ist der
+österreichische nationale Dienst für Meteorologie, Klimatologie, Geologie und
+Geophysik. Die Bundesanstalt ist eine
+[Anstalt öffentlichen Rechts](https://geosphere.at/de/impressum).
+Sie entstand 2023 aus dem Zusammenschluss der Zentralanstalt für Meteorologie
+und Geodynamik (ZAMG) und der Geologischen Bundesanstalt (GBA).
+
+Über den [GeoSphere Austria Data Hub](https://data.hub.geosphere.at/de/about)
+werden offene Daten kostenfrei bereitgestellt. Diese FHEM-Anbindung nutzt
+öffentlich zugängliche Schnittstellen ohne Benutzerkonto oder API-Schlüssel.
+Die verwendeten Wetterdaten stehen unter CC BY 4.0; die jeweiligen
+Quellen- und Lizenzangaben sind bei Weiterverwendung zu beachten.
+GeoSphereAPI ist eine eigenständige FHEM-Anbindung von 50watt.
+
+## Voraussetzungen
+
+- FHEM mit dem standardmäßig mitgelieferten Weather-Modul.
+- Internetzugang über HTTPS.
+- Standortkoordinaten in Österreich, entweder in den globalen FHEM-Attributen
+  `latitude`/`longitude` oder als `location=Breite,Länge` in der Definition.
+
+Ein bereits eingerichtetes Weather-Device ist nicht erforderlich.
+
 ## Installation und Updates
 
-Voraussetzung: eine funktionierende FHEM-Weather-Installation und Internetzugang
-über HTTPS. Vor einem Upgrade eine Sicherung der bisherigen GeoSphereAPI.pm
+Vor einem Upgrade eine Sicherung der bisherigen GeoSphereAPI.pm
 anlegen. Die Updatequelle installiert ausschließlich die API-Datei.
 
 **FHEMWEB-Kommandozeile**, als eigenen Schritt ausführen:
