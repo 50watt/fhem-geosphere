@@ -21,20 +21,20 @@ update all https://raw.githubusercontent.com/50watt/fhem-geosphere/main/controls
 Erwartet: erfolgreicher Download von lib/FHEM/APIs/Weather/GeoSphereAPI.pm.
 Bei Fehlern nicht mit dem Neustart fortfahren.
 
-Danach **Linux/SSH**, Standardinstallation unter /opt/fhem:
+Die Installation erfolgt vollständig über FHEMWEB; ein SSH-Zugang oder ein
+separater Aufruf von `perl -c` ist nicht erforderlich. Die veröffentlichte
+API-Datei wurde vor der Bereitstellung auf Perl-Syntax geprüft.
 
-```bash
-sudo -u fhem perl -c /opt/fhem/lib/FHEM/APIs/Weather/GeoSphereAPI.pm
-```
-
-Erwartet: syntax OK. Erst danach **FHEMWEB-Kommandozeile**, eigener Schritt:
+Erst nach erfolgreichem Update **FHEMWEB-Kommandozeile**, eigener Schritt:
 
 ```text
 shutdown restart
 ```
 
 Ein Weather-reload allein lädt einen bereits geladenen API-Provider nicht
-zuverlässig neu. Nach dem Neustart muss apiVersion den Wert 0.2.8 zeigen.
+zuverlässig neu. Bei einem bereits vorhandenen GeoSphere-Gerät nach dem Neustart
+und dem nächsten Wetterabruf das Reading `apiVersion` prüfen: erwartet wird `0.2.8`.
+Bei einer Erstinstallation anschließend das unten beschriebene Testgerät anlegen.
 
 ## Testgerät
 
