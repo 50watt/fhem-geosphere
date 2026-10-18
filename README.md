@@ -32,8 +32,11 @@ shutdown restart
 ```
 
 Ein Weather-reload allein lädt einen bereits geladenen API-Provider nicht
-zuverlässig neu. Bei einem bereits vorhandenen GeoSphere-Gerät nach dem Neustart
-und dem nächsten Wetterabruf das Reading `apiVersion` prüfen: erwartet wird `0.2.8`.
+zuverlässig neu. Direkt nach dem Neustart kann das Reading `apiVersion` noch die
+alte Version anzeigen: FHEM stellt zunächst die gespeicherten Readings wieder her.
+Erst bei einer Datenaktualisierung wird auch `apiVersion` neu geschrieben.
+Bei einem bestehenden GeoSphere-Gerät daher die nächste Datenaktualisierung
+abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.8`.
 Bei einer Erstinstallation anschließend das unten beschriebene Testgerät anlegen.
 
 ## Testgerät
