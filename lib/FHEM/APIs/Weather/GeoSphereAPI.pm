@@ -1787,12 +1787,13 @@ Only a successful empty warnings response confirms zero warnings. Errors leave
 counts unknown. Forecast conditions use official sy symbols where available;
 missing/unsupported symbols use an explicitly approximate fallback. Current condition and
 apparent temperature are not observed. Daily extrema cover available hourly
-samples only. README.md documents all configuration, validity and upgrade rules.
+samples only. DOKUMENTATION.md documents configuration and validity rules;
+README.md describes installation and updates.
 
 =head1 LICENSE AND SUPPORT
 
 Code: GPL-2.0-or-later. Data: GeoSphere Austria, CC BY 4.0. Attribution must be
 visible when publishing data. Maintainer: 50watt (FHEM weather forum).
-No official FHEM inclusion is implied. See EINREICHUNG.md and README.md.
+No official FHEM inclusion is implied. See README.md and DOKUMENTATION.md.
 
 =cut

@@ -21,10 +21,6 @@ update all https://raw.githubusercontent.com/50watt/fhem-geosphere/main/controls
 Erwartet: erfolgreicher Download von lib/FHEM/APIs/Weather/GeoSphereAPI.pm.
 Bei Fehlern nicht mit dem Neustart fortfahren.
 
-Die Installation erfolgt vollständig über FHEMWEB; ein SSH-Zugang oder ein
-separater Aufruf von `perl -c` ist nicht erforderlich. Die veröffentlichte
-API-Datei wurde vor der Bereitstellung auf Perl-Syntax geprüft.
-
 Erst nach erfolgreichem Update **FHEMWEB-Kommandozeile**, eigener Schritt:
 
 ```text
@@ -37,19 +33,19 @@ alte Version anzeigen: FHEM stellt zunächst die gespeicherten Readings wieder h
 Erst bei einer Datenaktualisierung wird auch `apiVersion` neu geschrieben.
 Bei einem bestehenden GeoSphere-Gerät daher die nächste Datenaktualisierung
 abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.8`.
-Bei einer Erstinstallation anschließend das unten beschriebene Testgerät anlegen.
+Bei einer Erstinstallation anschließend das Weather-Device definieren.
 
-## Testgerät
+## Definition
 
-In der **FHEMWEB-Kommandozeile** eine eigene Definition anlegen. Dieses Beispiel
+Weather-Device in der **FHEMWEB-Kommandozeile** definieren. Dieses Beispiel
 nutzt die in FHEM global eingestellten Koordinaten; diese müssen zum gewünschten
 österreichischen Standort passen:
 
 ```text
-define wetter_geosphere_test Weather API=GeoSphereAPI interval=300 lang=de
+define wetter_geosphere Weather API=GeoSphereAPI interval=300 lang=de
 ```
 
-Erwartet: Stationsmesswerte und apiVersion=0.2.8. Ein bestehendes Wettergerät
+Erwartet nach der ersten Datenaktualisierung: Stationsmesswerte und apiVersion=0.2.8. Ein bestehendes Weather-Device
 kann parallel weiterlaufen. Weitere Attribute, Prognosen, Warnungen, Gültigkeit
 und bekannte Grenzen sind in [DOKUMENTATION.md](DOKUMENTATION.md) beschrieben.
 

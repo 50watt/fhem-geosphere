@@ -3,9 +3,9 @@
 Beta-Provider für österreichische Stationsmesswerte, Stundenprognosen,
 aggregierte Tagesprognosen, optionale Warnungen und 15-Minuten-Niederschlagsnowcast.
 Code: GPL-2.0-or-later. Daten: GeoSphere Austria, CC BY 4.0.
-Kein API-Schlüssel erforderlich. Keine offizielle FHEM-Aufnahme behauptet.
+Kein API-Schlüssel erforderlich. Maintainer: **50watt**.
 
-## Änderungen gegenüber 0.2.6
+## Funktionen
 
 - Gemessener Taupunkt TP, Globalstrahlung GLOW und Sonnenscheindauer SO.
 - Stundenprognosen für ssrd-Globalstrahlung und sund-Sonnenscheindauer.
@@ -16,9 +16,9 @@ Kein API-Schlüssel erforderlich. Keine offizielle FHEM-Aufnahme behauptet.
   korrekt berücksichtigt. Fehlende Werte sind keine Null.
 - Separate summaryCondition für den verfügbaren Tageszeitraum. Die bestehenden
   offiziellen condition/icon bleiben auf die repräsentative Stunde bezogen.
-- API-only: kein Weather-Kernpatch und kein Patch-Vorbereitungsskript.
+- Anbindung über das vorhandene Weather-Modul.
 
-Einzelheiten: CHANGELOG.md, FHEM_ANPASSUNGEN.md und TESTERGEBNIS.md.
+Änderungen: [CHANGELOG.md](CHANGELOG.md). Tests: [TESTERGEBNIS.md](TESTERGEBNIS.md).
 
 ## Voraussetzungen und Dateien
 
@@ -36,50 +36,14 @@ Python 3 wird nur für Installer und Testhilfen benötigt.
 - tests/: reproduzierbare Offline-Tests sowie optionaler echter Live-Abruf.
 - references/: Prüfkopien und Quellen, keine Installationsdateien.
 
-## Installation und Upgrade
+## Installation und Updates
 
-Linux/SSH – zunächst nur entpacken:
+Installation und Updates erfolgen über die FHEM-Updatequelle. Die Befehle
+stehen in [README.md](README.md#installation-und-updates).
+Nach dem Neustart zeigt `apiVersion` zunächst noch das gespeicherte Reading;
+erst nach einer Datenaktualisierung ist die geladene API-Version sichtbar.
 
-~~~bash
-python3 -m zipfile -e /home/pi/GeoSphereAPI-0.2.8.zip /home/pi
-~~~
-
-Erwartet: Verzeichnis /home/pi/GeoSphereAPI-0.2.8. Anschließend getrennt
-prüfen; jeden Block als eigenen Arbeitsschritt ausführen und Ergebnis abwarten.
-
-Linux/SSH:
-
-~~~bash
-python3 /home/pi/GeoSphereAPI-0.2.8/install.py --check-only
-~~~
-
-Erwartet: GeoSphereAPI.pm syntax OK und erkannte Weather-Schnittstelle.
-Noch keine Änderung der installierten Datei.
-
-Linux/SSH – erst nach erfolgreicher Prüfung:
-
-~~~bash
-sudo python3 /home/pi/GeoSphereAPI-0.2.8/install.py
-~~~
-
-Erwartet: Sicherung der vorherigen API-Datei, Installation, SHA256. Der
-Installer ändert keine FHEM-Konfiguration und führt keinen Reload aus.
-Danach separat einen kontrollierten FHEM-Neustart planen; ein normales
-reload des Weather-Moduls lädt einen bereits per require geladenen Provider
-nicht zuverlässig neu. Nach Aktivierung apiVersion=0.2.8 prüfen.
-
-FHEMWEB-Kommandozeile – erst nach Installation/Syntaxprüfung, eigener Schritt:
-
-~~~text
-shutdown restart
-~~~
-
-Erwartet nach Wiederanlauf und Wetterupdate: apiVersion=0.2.8.
-Für bestehende Geräte sind außer korrekt gesetzter Forecast-Auswahl keine
-neuen Pflichtattribute erforderlich. Keine Datenbankmigration notwendig.
-Privater Betriebsnachweis liegt bis 0.2.7 vor; 0.2.8 ändert nur die Maintainer-Angaben.
-
-## Gerätekonfiguration
+## Definition
 
 beispiel.fhem enthält separate FHEMWEB-/fhem.cfg-Zeilen. Nicht unbesehen
 als Stapel in die FHEMWEB-Kommandozeile kopieren.
@@ -87,7 +51,7 @@ als Stapel in die FHEMWEB-Kommandozeile kopieren.
 FHEMWEB-Kommandozeile – Anlage am globalen Standort:
 
 ~~~text
-defmod s.global.wetter.geosphere.weather Weather API=GeoSphereAPI interval=300 lang=de
+define wetter_geosphere Weather API=GeoSphereAPI interval=300 lang=de
 ~~~
 
 Danach als einzelne Schritte forecast hourly,daily, alerts 1 und bei Bedarf
@@ -242,13 +206,14 @@ Vor Steuerbefehlen Quelle=ok, plausible Readingwerte und Mess-/Modellalter
 prüfen. Für Tagesprognosen außerdem coverage und numerische Temperaturen.
 Leere Werte sind keine Null, unknown ist nicht no.
 
-## Lokale Zeiten und FHEM-Anpassungen
+## Zeitangaben und Standortänderung
 
 Sichtbare Zeitreadings verwenden die lokale Zeitzone des FHEM-Prozesses:
 TT.MM.JJJJ HH:MM:SS CET/CEST bei Europe/Vienna. Numerische Epoch-Werte bleiben
 erhalten. location legt keine eigene Zeitzone fest.
 
-FHEM_ANPASSUNGEN.md beschreibt Logging/Eventkontrolle und HomeMode.
+Beispiele für Logging, Eventkontrolle und HomeMode stehen in
+`beispiel.fhem` und `homemode_geosphere.fhem`.
 Historische Datenbankwerte werden nicht umformatiert. Die reguläre
 Standortänderung erfolgt über die Gerätedefinition. Der unveränderte Weather-
 Kern lässt GeoSphere nicht über seine feste newLocation-Providerliste zu.
@@ -315,25 +280,18 @@ weil Weather dafür noch keine vollständigen Provider-Hooks anbietet.
 Es gibt keine direkte Änderung fremder Geräte und keine direkten Schreibzugriffe
 auf den userattr-Hash. Die Runtime-Attributliste des eigenen Geräts wird über
 setDevAttrList ergänzt; bestehende Weather-Attribute bleiben erhalten.
-Vor upstream-Aufnahme diese Anbindung mit dem Weather-Maintainer abstimmen.
 
 FHEM::Meta liest die eingebetteten META.json-Daten im normalen FHEM-Betrieb.
 JSON::PP bleibt absichtlich die Kernmodul-Abhängigkeit statt eines mehrfachen
 JSON-Backend-Fallbacks. .perltidyrc dokumentiert die Codeformatierung.
 Maintainer: **50watt**. Support über das FHEM-Wetterforum.
 
-## Tests und Veröffentlichung
+## Tests
 
 Siehe TESTERGEBNIS.md für ausgeführte Tests und bekannte Prüfgrenzen.
 0.2.7 wurde privat erfolgreich betrieben; 0.2.8 ändert nur die Maintainer-Angaben.
 Offline-Vertragstests verwenden echte Weather-Quellen mit simulierten
 FHEM-Diensten; sie ersetzen keinen vollständigen produktiven FHEM/HomeMode-Test.
-
-Mit vorhandenem SVN-Zugang: zuerst im Wetterforum vorstellen und den
-Weather-Maintainer wegen des API-Vertrags ansprechen.
-Kein Pull Request gegen den reinen fhem-mirror. Details in EINREICHUNG.md.
-Die Veröffentlichung erfolgt als GitHub-Testquelle. Eine SVN-Aufnahme oder
-Kontaktaufnahme ist damit nicht verbunden.
 
 ## Quellen und Lizenzen
 
