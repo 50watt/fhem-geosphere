@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # $Id$
-# GeoSphere Austria provider for FHEM Weather. Version 0.2.8, beta.
+# GeoSphere Austria provider for FHEM Weather. Version 0.2.9, beta.
 # Data: GeoSphere Austria, CC BY 4.0. See README.md for attribution.
 package FHEM::APIs::Weather::GeoSphereAPI;
 
@@ -12,7 +12,7 @@ use POSIX        qw(strftime);
 use Time::Local  qw(timegm timelocal);
 use Scalar::Util qw(looks_like_number refaddr);
 
-our $VERSION = '0.2.8';
+our $VERSION = '0.2.9';
 
 # Use the standard FHEM metadata loader when running inside FHEM. Standalone
 # parser/installer checks deliberately need no complete FHEM installation.
@@ -538,6 +538,29 @@ sub _number {
 }
 sub _round { return 0 + sprintf( '%.1f', $_[0] ); }
 
+# Weather normally creates wind_condition itself. Its boolean checks,
+# however, omit valid 0-degree and calm-wind values. Generate a complete
+# fallback value for these cases and when either component is unavailable.
+sub _wind_condition {
+    my ( $direction, $speed, $lang ) = @_;
+
+    my @directions =
+      $lang eq 'de'
+      ? qw(N NNO NO ONO O OSO SO SSO S SSW SW WSW W WNW NW NNW)
+      : qw(N NNE NE ENE E ESE SE SSE S SSW SW WSW W WNW NW NNW);
+
+    my $wdir = '-';
+    if ( defined $direction && $direction ne '' ) {
+        my $index = int( ( $direction + 11.25 ) / 22.5 ) % 16;
+        $wdir = $directions[$index];
+    }
+
+    my $wind_speed =
+      defined $speed && $speed ne '' ? $speed : '-';
+
+    return "Wind: $wdir $wind_speed km/h";
+}
+
 sub _feature {
     my ($data) = @_;
     die "expected one GeoJSON feature\n"
@@ -598,7 +621,6 @@ sub _current {
         ),
         conditionSource => 'not observed; no model substituted',
         wind_direction  => '',
-        wind_condition  => '',
         wind_gust       => '',
         rain10min_mm    => '',
         stationPressure => '',
@@ -609,6 +631,17 @@ sub _current {
     );
     my $dd = _value( $p, 'DD', 0, '°' );
     $r{wind_direction} = $dd if defined $dd && $dd >= 0 && $dd <= 360;
+
+    # Avoid publishing an empty wind_condition before Weather derives it.
+    # Supply the cases skipped by Weather's boolean checks locally.
+    $r{wind_condition} =
+      _wind_condition( $r{wind_direction}, $r{wind_speed}, $self->{lang} )
+      unless defined $r{wind_direction}
+      && $r{wind_direction} ne ''
+      && $r{wind_direction}
+      && defined $r{wind_speed}
+      && $r{wind_speed} ne ''
+      && $r{wind_speed};
     my $gust = _value( $p, 'FFX', 0, 'm/s' );
     $r{wind_gust} = _round( $gust * 3.6 ) if defined $gust && $gust >= 0;
     my $rr = _value( $p, 'RR', 0, 'mm' );
@@ -845,7 +878,6 @@ sub _forecast {
             wind                     => '',
             wind_speed               => '',
             wind_direction           => '',
-            wind_condition           => '',
             wind_gust                => '',
         );
         if ( defined $u && defined $v ) {
@@ -856,6 +888,18 @@ sub _forecast {
                 $row{wind_direction} = _round($direction);
             }
         }
+
+        # Weather derives the usual value. Handle north, calm wind and
+        # unavailable components here so no empty wind_condition is emitted.
+        $row{wind_condition} =
+          _wind_condition( $row{wind_direction}, $row{wind_speed}, $self->{lang} )
+          unless defined $row{wind_direction}
+          && $row{wind_direction} ne ''
+          && $row{wind_direction}
+          && defined $row{wind_speed}
+          && $row{wind_speed} ne ''
+          && $row{wind_speed};
+
         $row{wind_gust} = _round( $gust * 3.6 ) if defined $gust && $gust >= 0;
         push @{ $days{$date} }, \%row;
         push @all,              \%row;
@@ -888,6 +932,7 @@ sub _forecast {
             tempHigh            => '',
             temperature         => '',
             temp_c              => '',
+            wind_condition      => '',
             precipitation       => '',
             rain1h              => '',
             snowWaterEquivalent => '',
@@ -1704,7 +1749,7 @@ our @ISA = ('FHEM::APIs::Weather::GeoSphereAPI');
 {
   "abstract": "GeoSphere Austria observations, forecasts, nowcast and warnings for FHEM Weather",
   "keywords": ["fhem-mod-device", "Weather", "API", "GeoSphere"],
-  "version": "v0.2.8",
+  "version": "v0.2.9",
   "release_status": "testing",
   "license": "GPL_2",
   "author": ["GeoSphereAPI contributors"],

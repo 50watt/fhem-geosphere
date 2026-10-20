@@ -1,1 +1,1 @@
-UPD 2026-10-18_12:48:02 77597 lib/FHEM/APIs/Weather/GeoSphereAPI.pm
+UPD 2026-10-20_08:57:12 79237 lib/FHEM/APIs/Weather/GeoSphereAPI.pm

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.9 – 2026-10-20 – beta, API-only
+
+- Stop publishing empty `wind_condition` values for current observations and
+  hourly forecasts, preventing DbLog warnings while parsing empty Weather events.
+- Keep the normal localized wind description in the unmodified Weather core.
+  Add a complete provider fallback for 0-degree north wind, calm wind and
+  unavailable direction or speed values.
+- Add focused regression tests. No Weather-core change and no configuration
+  migration are required.
+
 ## 0.2.8 – 2026-10-18 – beta, API-only
 
 - Set the maintainer to 50watt in API diagnostics, FHEM metadata and support documentation.

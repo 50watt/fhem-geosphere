@@ -1,4 +1,4 @@
-# GeoSphereAPI 0.2.8 für FHEM Weather
+# GeoSphereAPI 0.2.9 für FHEM Weather
 
 Beta-Provider für österreichische Stationsmesswerte, Stundenprognosen,
 aggregierte Tagesprognosen, optionale Warnungen und 15-Minuten-Niederschlagsnowcast.
@@ -401,10 +401,20 @@ JSON::PP bleibt absichtlich die Kernmodul-Abhängigkeit statt eines mehrfachen
 JSON-Backend-Fallbacks. .perltidyrc dokumentiert die Codeformatierung.
 Maintainer: **50watt**. Support über das FHEM-Wetterforum.
 
+## Winddarstellung
+
+Bei vorhandener Windrichtung und positiver Windgeschwindigkeit erzeugt weiterhin
+der unveränderte Weather-Kern das Reading `wind_condition`. GeoSphereAPI
+veröffentlicht dafür keinen vorläufigen Leerwert mehr. Für 0 Grad Nordwind,
+Windstille oder fehlende Einzelwerte liefert der Provider selbst eine vollständige
+Darstellung wie `Wind: N 0 km/h` oder `Wind: - - km/h`. Dadurch entstehen keine
+leeren `wind_condition`-Ereignisse für die historische DbLog-Auswertung.
+
 ## Tests
 
 Siehe TESTERGEBNIS.md für ausgeführte Tests und bekannte Prüfgrenzen.
-0.2.7 wurde privat erfolgreich betrieben; 0.2.8 ändert nur die Maintainer-Angaben.
+0.2.8 wurde produktiv betrieben; 0.2.9 korrigiert ausschließlich die robuste
+Veröffentlichung von `wind_condition` ohne Änderung am Weather-Kern.
 Offline-Vertragstests verwenden echte Weather-Quellen mit simulierten
 FHEM-Diensten; sie ersetzen keinen vollständigen produktiven FHEM/HomeMode-Test.
 

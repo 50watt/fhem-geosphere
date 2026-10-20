@@ -1,12 +1,12 @@
-# Testnachweis GeoSphereAPI 0.2.8
+# Testnachweis GeoSphereAPI 0.2.9
 
-18.10.2026, Perl 5.38.2, Python 3.12, Testzeitzone Europe/Vienna.
+20.10.2026, Perl 5.40.1, Python 3.13, Testzeitzone Europe/Vienna.
 Das Paket enthält ausschließlich den neuen Provider und seine Begleitdateien.
 Kein Weather-Patch und keine Tests gegen einen veränderten Weather-Kern.
 
 ## Erfolgreiche Prüfungen
 
-734 Perl-Assertions:
+741 Perl-Assertions:
 - 59 allgemeine Provider-Tests.
 - 58 Stations-/Warnungstests.
 - 27 Höhen-/Auswahltests.
@@ -16,6 +16,8 @@ Kein Weather-Patch und keine Tests gegen einen veränderten Weather-Kern.
 - 153 offizielle Symboltests.
 - 50 Review-Regressionen aus 0.2.6.
 - 9 Metadatenprüfungen einschließlich Maintainer 50watt.
+- 7 Winddarstellungsprüfungen für Nordwind bei 0/360 Grad, Windstille,
+  deutsche Himmelsrichtungen und fehlende Richtungs-/Geschwindigkeitswerte.
 - 74 neue Solar-/Taupunkt-/Tagesmengentests: optionale Felder, gültige Nullwerte,
   unplausible/missing Werte, Kennzeichnung berechneter Taupunkte, Einheiten,
   lokale Zeitgrenzen, getrennte Regen-/Schneemengen, richtige Mitternachts-
@@ -66,7 +68,7 @@ Linux/SSH – im entpackten Paketverzeichnis als eigener Arbeitsschritt:
 TZ=Europe/Vienna python3 tests/run_all.py
 ~~~
 
-Erwartet: 734 erfolgreiche Perl-Assertions und ein erfolgreicher Python-
+Erwartet: 741 erfolgreiche Perl-Assertions und ein erfolgreicher Python-
 Installer-Testfall. Es wird kein produktiver FHEM-Server verändert.
 
 Linux/SSH – separater optionaler Live-Test:
@@ -82,6 +84,6 @@ Quellstatus. Die echten Wetterwerte ändern sich.
 
 Die Vertragstests laden unveränderte Weather-Quellen, simulieren aber FHEM-
 Laufzeitdienste. Produktiver Neustart, grafische Anzeige, HomeMode-Texte,
-private Automationen und Langzeitbetrieb sind vor Ort zu prüfen. 0.2.7 wurde
-vom Nutzer privat erfolgreich aktiviert; 0.2.8 ändert nur die Maintainer-Angaben.
-Keine Kernänderung ausgeführt.
+private Automationen und Langzeitbetrieb sind vor Ort zu prüfen. 0.2.8 wurde
+vom Nutzer produktiv betrieben; 0.2.9 korrigiert die Veröffentlichung von
+`wind_condition`. Keine Kernänderung ausgeführt.

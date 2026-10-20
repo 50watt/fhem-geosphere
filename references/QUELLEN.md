@@ -53,7 +53,7 @@ Comparison sources retrieved 2026-10-18:
 - https://github.com/fhem/fhem-mirror/blob/main/fhem/FHEM/Meta.pm
 - https://forum.fhem.de/index.php?topic=18962.0
 
-Release 0.2.8 contains no Weather patch or patch helper. References are not installed.
+Release 0.2.9 contains no Weather patch or patch helper. References are not installed.
 
 ## Additional station and forecast parameters verified for 0.2.8
 
