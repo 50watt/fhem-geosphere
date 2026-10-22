@@ -138,7 +138,7 @@ like(value('fc1_precipitationCoverage'),qr/^(?:complete|partial|unknown|missing)
 ok(defined value('fc1_rainTotal_mm'),'real core exposes daily liquid rain field');
 ok(defined value('fc1_sunshineCoverage'),'real core exposes daily sunshine scope');
 ok(defined value('fc1_summaryCondition'),'real core exposes separate daily summary');
-is($device->{fhem}{api}->getWeather->{apiVersion},'0.2.9','new provider loaded by unmodified core');
+is($device->{fhem}{api}->getWeather->{apiVersion},'0.2.10','new provider loaded by unmodified core');
 for my $reading (qw(measurementTime pubDate current_date_time forecastReferenceTime warningsFetchedAt hfc1_timestamp fc1_periodStart warn_0_Start)) {
  like(value($reading),qr/^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2} (?:CET|CEST)$/,"real core local display for $reading");
 }
@@ -200,6 +200,37 @@ for my $d ($freshCurrent,$forecast,fixture('warnings-none')) {
 is(value('forecastStatus'),'ok','real core forecast recovery');
 ok(defined value('hfc1_temperature'),'real core hourly forecast restored');
 is(value('forecastLastError'),'','real core forecast error cleared on recovery');
+
+my $invalidDevice = $defs{invalidContract} = {NAME=>'invalidContract',TYPE=>'Weather'};
+my $invalidError = $define->($invalidDevice,['invalidContract','Weather'],{
+    API=>'GeoSphereAPI',location=>'48.2213',lang=>'de',interval=>600,
+});
+is($invalidError,undef,'invalid provider configuration does not escape Weather Define');
+isa_ok($invalidDevice->{fhem}{api},'FHEM::APIs::Weather::GeoSphereAPI');
+like($invalidDevice->{READINGS}{state}{VAL},
+    qr/configuration error: location must be latitude,longitude; for example location=48\.2486,16\.3564/,
+    'configuration error immediately visible in state');
+like($invalidDevice->{READINGS}{lastError}{VAL},qr/location must be latitude,longitude/,
+    'configuration cause immediately visible in lastError');
+my $invalidAttributeDevice = $defs{invalidAttributeContract} = {
+    NAME=>'invalidAttributeContract',TYPE=>'Weather',
+};
+$define->($invalidAttributeDevice,['invalidAttributeContract','Weather'],{
+    API=>'GeoSphereAPI',location=>'48.2213,16.3157',lang=>'de',interval=>600,
+});
+$attr{invalidAttributeContract}{geoSphereAltitude}='invalid';
+my $attributeUpdate = eval { $update->($invalidAttributeDevice); 1 };
+ok($attributeUpdate,'invalid altitude does not escape Weather update');
+like($invalidAttributeDevice->{READINGS}{lastError}{VAL},
+    qr/configuration error: invalid geoSphereAltitude/,
+    'invalid altitude is exposed as configuration error');
+delete $attr{invalidAttributeContract}{geoSphereAltitude};
+$attr{invalidAttributeContract}{geoSphereStation}='invalid';
+$attributeUpdate = eval { $update->($invalidAttributeDevice); 1 };
+ok($attributeUpdate,'invalid station does not escape Weather update');
+like($invalidAttributeDevice->{READINGS}{lastError}{VAL},
+    qr/configuration error: invalid geoSphereStation/,
+    'invalid station is exposed as configuration error');
 $api->{nowcastOption}=1;
 # Use the API option because the integration device has its own name.
 my $quarter=int(time/900)*900;

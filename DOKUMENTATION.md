@@ -1,4 +1,4 @@
-# GeoSphereAPI 0.2.9 für FHEM Weather
+# GeoSphereAPI 0.2.10 für FHEM Weather
 
 Beta-Provider für österreichische Stationsmesswerte, Stundenprognosen,
 aggregierte Tagesprognosen, optionale Warnungen und 15-Minuten-Niederschlagsnowcast.
@@ -54,6 +54,44 @@ define wetter_geosphere Weather API=GeoSphereAPI interval=300 lang=de
 
 Das Beispiel verwendet die globalen Standortkoordinaten. Für einen anderen
 Standort wird zusätzlich `location=Breite,Länge` in der Definition angegeben.
+Bei einer Neuanlage im bereits laufenden FHEM danach als separaten
+FHEMWEB-Befehl `set wetter_geosphere update` ausführen. Der unveränderte
+Weather-Kern startet nach `defmod` selbst einen Abruf, nach einem neuen
+`define` jedoch nicht unmittelbar. Bis zum ersten Abruf ist `Initialized`
+daher erwartbar.
+
+### Herkunft der Standortdaten
+
+GeoSphereAPI wertet die Koordinaten in dieser Reihenfolge aus:
+
+1. `location=Breite,Länge` in der Definition des Weather-Devices;
+2. die globalen FHEM-Attribute `latitude` und `longitude`, wenn beide gesetzt
+   sind;
+3. den bereits vom Weather-Kern aufgelösten Standort als
+   Kompatibilitätsrückfall.
+
+Das Reading `locationSource` zeigt die tatsächlich verwendete Quelle:
+
+| `locationSource` | Bedeutung |
+| --- | --- |
+| `device` | `location=...` stammt aus der Definition des Weather-Devices. |
+| `global` | Die globalen Attribute `latitude` und `longitude` werden verwendet. |
+| `Weather resolved location` | Kompatibilitätsrückfall auf den vom Weather-Kern übergebenen Standort. |
+| `newLocation` | Temporärer Laufzeitstandort; der unveränderte Weather-Kern bietet diesen Befehl für GeoSphereAPI derzeit nicht an. |
+
+Die tatsächlich verwendeten Werte stehen in `lat` und `long`. Die Höhenquelle
+ist getrennt davon in `locationAltitudeSource` dokumentiert: `device` bedeutet
+Attribut `geoSphereAltitude`, `global` bedeutet globales Attribut `altitude`
+bei identischen globalen Koordinaten und `missing` bedeutet, dass keine
+Standorthöhe verwendet wird. `locationAltitude` enthält den zugehörigen Wert.
+
+Ungültige Standort-, Höhen-, Stations-, API-Options- oder Timeout-Angaben
+werden innerhalb des Providers abgefangen. FHEM bleibt aktiv; die Ursache
+erscheint in `state`, `status` und `lastError`. Nach einer korrigierten
+Definition beziehungsweise einem korrigierten Attribut wird die dynamische
+Konfiguration beim nächsten Update erneut geprüft. Bei einer ungültigen
+Standortangabe enthält die Meldung mit `location=48.2486,16.3564` ein direkt
+verwendbares Beispiel des öffentlichen GeoSphere-Standorts Wien/Hohe Warte.
 
 ### Parameter der Definition
 
@@ -413,8 +451,9 @@ leeren `wind_condition`-Ereignisse für die historische DbLog-Auswertung.
 ## Tests
 
 Siehe TESTERGEBNIS.md für ausgeführte Tests und bekannte Prüfgrenzen.
-0.2.8 wurde produktiv betrieben; 0.2.9 korrigiert ausschließlich die robuste
-Veröffentlichung von `wind_condition` ohne Änderung am Weather-Kern.
+0.2.8 wurde produktiv betrieben; 0.2.9 korrigierte die robuste
+Veröffentlichung von `wind_condition`. 0.2.10 fängt Konfigurationsfehler an
+der Providergrenze ab. Keine dieser Versionen ändert den Weather-Kern.
 Offline-Vertragstests verwenden echte Weather-Quellen mit simulierten
 FHEM-Diensten; sie ersetzen keinen vollständigen produktiven FHEM/HomeMode-Test.
 

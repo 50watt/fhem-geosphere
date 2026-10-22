@@ -81,5 +81,6 @@ $api->setLocation(47,15);
 $pending->{callback}->($pending,'',encode_json($data));
 ok(!exists $api->{nowcastData},'late response for previous location ignored');
 is($api->getWeather->{rainNextHour},'unknown','location change clears rain summary');
-eval {$c->new({devName=>'test',location=>'47,15',apioptions=>'nowcast:2'})};like($@,qr/0 or 1/,'invalid enable option rejected');
+my $invalid=$c->new({devName=>'invalid',location=>'47,15',apioptions=>'nowcast:2'});
+like($invalid->getWeather->{status},qr/0 or 1/,'invalid enable option exposed without terminating FHEM');
 done_testing;

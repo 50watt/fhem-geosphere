@@ -6,7 +6,7 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '0.2.9'
+VERSION = '0.2.10'
 
 
 def included(path):

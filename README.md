@@ -1,12 +1,26 @@
 # GeoSphereAPI für FHEM Weather
 
-Testversion 0.2.9 · Maintainer: **50watt**
+Testversion 0.2.10 · Maintainer: **50watt**
 
 GeoSphereAPI bringt österreichische Stationsmesswerte, Stundenprognosen und daraus
 abgeleitete Tagesprognosen, einen 15-Minuten-Niederschlagsnowcast und standortbezogene
 Wetterwarnungen in das FHEM-Weather-Modul. Ohne API-Schlüssel, mit automatischer
 Stationswahl unter Berücksichtigung der Entfernung und Höhenlage sowie
 nachvollziehbaren Angaben zu Datenalter und Gültigkeit.
+
+## Änderungen in 0.2.10
+
+- Fängt ungültige Standort-, Höhen-, Stations-, API-Options- und
+  Timeout-Konfigurationen innerhalb des Providers ab. Ein Konfigurationsfehler
+  beendet FHEM dadurch nicht mehr.
+- Schreibt die konkrete Ursache unmittelbar in `state`, `status` und
+  `lastError`, beispielsweise
+  `configuration error: location must be latitude,longitude; for example
+  location=48.2486,16.3564`. Die Beispielkoordinaten gehören zum öffentlichen
+  GeoSphere-Standort Wien/Hohe Warte.
+- Prüft korrigierbare Einstellungen bei den folgenden Aktualisierungen erneut,
+  sodass das Device nach einer Korrektur ohne Neustart wieder anlaufen kann.
+- Keine Änderung am Weather-Kern erforderlich.
 
 ## Änderungen in 0.2.9
 
@@ -63,18 +77,104 @@ zuverlässig neu. Direkt nach dem Neustart kann das Reading `apiVersion` noch di
 alte Version anzeigen: FHEM stellt zunächst die gespeicherten Readings wieder her.
 Erst bei einer Datenaktualisierung wird auch `apiVersion` neu geschrieben.
 Bei einem bestehenden GeoSphere-Gerät daher die nächste Datenaktualisierung
-abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.9`.
+abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.10`.
 Bei einer Erstinstallation anschließend das Weather-Device definieren.
 
 ## Definition
 
-Weather-Device in der **FHEMWEB-Kommandozeile** definieren. Dieses Beispiel
-nutzt die in FHEM global eingestellten Koordinaten; diese müssen zum gewünschten
-österreichischen Standort passen:
+Alle folgenden Befehle werden in der **FHEMWEB-Kommandozeile** jeweils einzeln
+ausgeführt. Von den drei Definitionsvarianten nur die zum eigenen Anwendungsfall
+passende verwenden.
+
+### Variante 1: globale FHEM-Koordinaten
+
+Mit folgendem Befehl zuerst die Detailausgabe des globalen Devices anzeigen:
+
+```text
+list global
+```
+
+Unter `Attributes` müssen `latitude` und `longitude` vorhanden sein. `altitude`
+ist optional, verbessert aber die automatische Stationswahl. Falls der globale
+FHEM-Standort tatsächlich Wien/Hohe Warte ist, könnten die Attribute anhand
+dieses öffentlichen Beispielstandorts so gesetzt werden:
+
+```text
+attr global latitude 48.2486
+```
+
+```text
+attr global longitude 16.3564
+```
+
+```text
+attr global altitude 198
+```
+
+Die globalen Standortattribute werden möglicherweise auch von anderen
+FHEM-Modulen verwendet. Daher nur auf den tatsächlichen Standort der eigenen
+Installation setzen und nicht ungeprüft die Beispielwerte übernehmen.
+
+Definition mit globalem Standort und automatischer Stationswahl:
 
 ```text
 define wetter_geosphere Weather API=GeoSphereAPI interval=300 lang=de
 ```
+
+### Variante 2: Standort direkt im Weather-Device
+
+Diese Variante lässt die globalen Attribute unverändert. Das Beispiel verwendet
+ebenfalls den öffentlichen Standort Wien/Hohe Warte:
+
+```text
+define wetter_geosphere Weather API=GeoSphereAPI location=48.2486,16.3564 interval=300 lang=de
+```
+
+Breitengrad und Längengrad werden mit Dezimalpunkt, ohne Leerzeichen und in
+dieser Reihenfolge angegeben. Für einen entfernten Standort kann dessen Höhe
+am Device ergänzt werden:
+
+```text
+attr wetter_geosphere geoSphereAltitude 198
+```
+
+### Variante 3: feste Station und Nowcast
+
+Dieses vollständige Beispiel verwendet die Station Wien/Hohe Warte mit der
+Stationsnummer `11035` und aktiviert den optionalen Niederschlagsnowcast:
+
+```text
+define wetter_geosphere Weather API=GeoSphereAPI,station:11035,nowcast:1 location=48.2486,16.3564 interval=300 lang=de
+```
+
+Stunden-/Tagesprognosen und standortbezogene Warnungen werden anschließend über
+die vorhandenen Weather-Attribute aktiviert:
+
+```text
+attr wetter_geosphere forecast hourly,daily
+```
+
+```text
+attr wetter_geosphere forecastLimit 24
+```
+
+```text
+attr wetter_geosphere alerts 1
+```
+
+### Erster Abruf und Kontrolle
+
+Bei einer Neuanlage im bereits laufenden FHEM nach der gewählten Definition und
+den gewünschten Attributen als eigenen Befehl den ersten Abruf starten:
+
+```text
+set wetter_geosphere update
+```
+
+Der unveränderte Weather-Kern startet nach `defmod` selbst einen Abruf. Direkt
+nach einem neuen `define` bleibt das Device dagegen bis zum ersten Abruf auf
+`Initialized`. GeoSphereAPI startet im Konstruktor bewusst keinen eigenen
+parallelen Timer.
 
 Die API wählt automatisch eine geeignete GeoSphere-Wetterstation in der Nähe.
 Dabei berücksichtigt sie die Entfernung, den Höhenunterschied zum Standort
@@ -87,7 +187,9 @@ Alternativ lässt sich die Station in FHEMWEB über das Dropdown des Attributs
 `geoSphereStation` manuell auswählen. Die Auswahlliste steht nach dem Laden
 der Stationsmetadaten bereit.
 
-Erwartet nach der ersten Datenaktualisierung: Stationsmesswerte und apiVersion=0.2.9.
+Erwartet nach der ersten Datenaktualisierung: `status=ok`, Stationsmesswerte,
+`apiVersion=0.2.10` und eine nachvollziehbare Standortquelle. Bei Variante 1
+steht `locationSource=global`, bei Variante 2 und 3 `locationSource=device`.
 Weitere Attribute, Prognosen, Warnungen, Gültigkeit
 und bekannte Grenzen sind in [DOKUMENTATION.md](DOKUMENTATION.md) beschrieben.
 

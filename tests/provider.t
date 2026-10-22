@@ -52,10 +52,23 @@ for my $case (
     ['old model',sub {$api->_forecast($forecast,$now+30000)}],
     ['invalid calendar date',sub {FHEM::APIs::Weather::GeoSphereAPI::_epoch('2026-02-30T12:00Z')}],
     ['invalid hour',sub {FHEM::APIs::Weather::GeoSphereAPI::_epoch('2026-10-17T25:00Z')}],
-    ['invalid location',sub {$CLASS->new({location=>'48.2,999'})}],
-    ['unknown option',sub {provider('secret:abc')}],
 ) {
     eval {$case->[1]->()}; ok($@,$case->[0].' rejected');
+}
+for my $case (
+    ['incomplete location', {location=>'48.2'}],
+    ['invalid location', {location=>'48.2,999'}],
+    ['unknown option', {location=>'48.2,16.3',apioptions=>'secret:abc'}],
+    ['invalid timeout', {location=>'48.2,16.3',apioptions=>'timeout:0'}],
+) {
+    my $invalid;
+    my $ok = eval { $invalid = $CLASS->new($case->[1]); 1 };
+    ok($ok, $case->[0].' does not terminate FHEM');
+    isa_ok($invalid, $CLASS, $case->[0].' returns provider');
+    like($invalid->getWeather->{status}, qr/(?:location|option|timeout)/,
+        $case->[0].' is exposed as provider status');
+    unlike($invalid->getWeather->{status}, qr/\s$/,
+        $case->[0].' status has no trailing whitespace');
 }
 is(FHEM::APIs::Weather::GeoSphereAPI::_epoch('2026-10-17T21:20:00+02:00'),$now-120,'ISO offset supported');
 for my $value (undef,-999,'NaN','Inf','oops') {

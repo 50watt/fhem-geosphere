@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.10 – 2026-10-22 – beta, API-only
+
+- Catch invalid location, altitude, station, API-option and timeout configuration
+  at the provider boundary instead of terminating the FHEM process.
+- Publish constructor errors immediately through `state`, `status` and
+  `lastError`; retain revalidation on later updates so corrected dynamic
+  settings can recover normally.
+- Add regression coverage with the unmodified FHEM Weather core.
+
 ## 0.2.9 – 2026-10-20 – beta, API-only
 
 - Stop publishing empty `wind_condition` values for current observations and

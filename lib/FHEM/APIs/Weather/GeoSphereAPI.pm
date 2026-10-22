@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # $Id$
-# GeoSphere Austria provider for FHEM Weather. Version 0.2.9, beta.
+# GeoSphere Austria provider for FHEM Weather. Version 0.2.10, beta.
 # Data: GeoSphere Austria, CC BY 4.0. See README.md for attribution.
 package FHEM::APIs::Weather::GeoSphereAPI;
 
@@ -12,7 +12,7 @@ use POSIX        qw(strftime);
 use Time::Local  qw(timegm timelocal);
 use Scalar::Util qw(looks_like_number refaddr);
 
-our $VERSION = '0.2.9';
+our $VERSION = '0.2.10';
 
 # Use the standard FHEM metadata loader when running inside FHEM. Standalone
 # parser/installer checks deliberately need no complete FHEM installation.
@@ -30,42 +30,67 @@ my $BASE = 'https://dataset.api.hub.geosphere.at/v1';
 
 sub new {
     my ( $class, $args ) = @_;
-    my %options;
-    for ( split /,/, $args->{apioptions} // '' ) {
-        next if $_ eq '';
-        my ( $k, $v ) = split /:/, $_, 2;
-        die "GeoSphereAPI: invalid option $_\n"
-          unless defined $v
-          && $k =~
-          /^(station|cachemaxage|forecastcache|timeout|observationmaxage|forecastmaxage|nowcast)$/;
-        die "GeoSphereAPI: invalid value for $k\n"
-          unless $v =~ /^\d+$/ || ( $k eq 'station' && $v eq 'auto' );
-        die "GeoSphereAPI: nowcast must be 0 or 1\n" if $k eq 'nowcast' && $v !~ /^[01]$/;
-        $options{$k} = $v eq 'auto' ? $v : 0 + $v;
-    }
     my $self = bless {
         devName           => $args->{devName},
         lang              => $args->{language} // 'de',
-        nowcastOption     => $options{nowcast} // 0,
-        stationOption     => $options{station} // 'auto',
-        station           => ( $options{station} // '' ) =~ /^\d+$/ ? $options{station} : undef,
+        nowcastOption     => 0,
+        stationOption     => 'auto',
         initialLocation   => $args->{location},
-        cachemaxage       => $options{cachemaxage}       // 600,
-        forecastcache     => $options{forecastcache}     // 1800,
-        timeout           => $options{timeout}           // 20,
-        observationmaxage => $options{observationmaxage} // 1800,
-        forecastmaxage    => $options{forecastmaxage}    // 32400,
+        cachemaxage       => 600,
+        forecastcache     => 1800,
+        timeout           => 20,
+        observationmaxage => 1800,
+        forecastmaxage    => 32400,
         fetchTime         => 0,
         forecast          => '',
         generation        => 0,
         constructing      => 1,
     }, $class;
-    die "GeoSphereAPI: timeout must be 1..120 seconds\n"
-      unless $self->{timeout} >= 1 && $self->{timeout} <= 120;
-    $self->_sync_location;
-    $self->_sync_altitude;
+
+    # Weather does not protect provider construction with eval.  Never let a
+    # configuration error terminate the complete FHEM process.
+    my $static_error;
+    my $configured = eval {
+        my %options;
+        for ( split /,/, $args->{apioptions} // '' ) {
+            next if $_ eq '';
+            my ( $k, $v ) = split /:/, $_, 2;
+            die "GeoSphereAPI: invalid option $_\n"
+              unless defined $v
+              && $k =~
+              /^(station|cachemaxage|forecastcache|timeout|observationmaxage|forecastmaxage|nowcast)$/;
+            die "GeoSphereAPI: invalid value for $k\n"
+              unless $v =~ /^\d+$/ || ( $k eq 'station' && $v eq 'auto' );
+            die "GeoSphereAPI: nowcast must be 0 or 1\n"
+              if $k eq 'nowcast' && $v !~ /^[01]$/;
+            $options{$k} = $v eq 'auto' ? $v : 0 + $v;
+        }
+        $self->{nowcastOption}     = $options{nowcast} // 0;
+        $self->{stationOption}     = $options{station} // 'auto';
+        $self->{station}           = $options{station}
+          if ( $options{station} // '' ) =~ /^\d+$/;
+        $self->{cachemaxage}       = $options{cachemaxage}       // 600;
+        $self->{forecastcache}     = $options{forecastcache}     // 1800;
+        $self->{timeout}           = $options{timeout}           // 20;
+        $self->{observationmaxage} = $options{observationmaxage} // 1800;
+        $self->{forecastmaxage}    = $options{forecastmaxage}    // 32400;
+        die "GeoSphereAPI: timeout must be 1..120 seconds\n"
+          unless $self->{timeout} >= 1 && $self->{timeout} <= 120;
+        1;
+    };
+    $static_error = $@ unless $configured;
+
+    my $dynamic_error;
+    if (!$static_error) {
+        my $synced = eval { $self->_sync_location; $self->_sync_altitude; 1 };
+        $dynamic_error = $@ unless $synced;
+    }
     $self->_station_dropdown( [] );
     $self->{cached} = $self->_base;
+    my $error = $static_error || $dynamic_error;
+    if ($error) {
+        $self->_configuration_error( $error, $static_error ? 1 : 0 );
+    }
     delete $self->{constructing};
     return $self;
 }
@@ -89,9 +114,42 @@ sub _base {
     };
 }
 
+sub _configuration_message {
+    my ( $self, $message ) = @_;
+    $message //= 'unknown configuration error';
+    $message =~ s/[\r\n]+/ /g;
+    $message =~ s/^GeoSphereAPI:\s*//;
+    $message =~ s/^\s+|\s+$//g;
+    return $message if $message =~ /^configuration error:/;
+    return 'configuration error: ' . substr( $message, 0, 220 );
+}
+
+sub _configuration_error {
+    my ( $self, $message, $persistent ) = @_;
+    $message = $self->_configuration_message($message);
+
+    # Static API options cannot recover without a new definition. Location,
+    # altitude and station attributes are revalidated on every update.
+    $self->{configurationError} = $message if $persistent;
+    $self->{cached}{status}      = 'GeoSphere: ' . $message;
+    $self->{cached}{lastError}   = $message;
+    $self->{cached}{validity}    = 'stale';
+
+    # During construction Weather has already created the device but has not
+    # assigned the provider object yet. Publish the diagnostic directly so the
+    # user sees the cause immediately instead of an unexplained "Initialized".
+    my $device = $self->_device;
+    if ( $device && defined &main::readingsSingleUpdate ) {
+        main::readingsSingleUpdate( $device, 'state',     $self->{cached}{status}, 1 );
+        main::readingsSingleUpdate( $device, 'status',    $self->{cached}{status}, 1 );
+        main::readingsSingleUpdate( $device, 'lastError', $message,                1 );
+    }
+    return;
+}
+
 sub setLocation {
     my ( $self, $lat, $lon, $from_sync ) = @_;
-    die "GeoSphereAPI: location must be latitude,longitude\n"
+    die "GeoSphereAPI: location must be latitude,longitude; for example location=48.2486,16.3564\n"
       unless defined $lat
       && defined $lon
       && $lat =~ /^-?\d+(?:\.\d+)?$/
@@ -162,6 +220,7 @@ sub _forecast_enabled {
 # All FHEM-specific access is kept behind an identity-checked boundary.
 sub _device {
     my ($self) = @_;
+    return unless defined $self->{devName};
     no warnings 'once';
     my $device = $main::defs{ $self->{devName} };
     return unless $device;
@@ -302,8 +361,9 @@ sub _error {
 
 sub setRetrieveData {
     my ($self) = @_;
+    return $self->_error( $self->{configurationError} ) if $self->{configurationError};
     my $ok = eval { $self->_sync_location; $self->_sync_altitude; $self->_sync_station; 1 };
-    return $self->_error($@) unless $ok;
+    return $self->_error( $self->_configuration_message($@) ) unless $ok;
     return if $self->{busy};
     delete $self->{metadataDone}
       if $self->{metadataChecked} && time - $self->{metadataChecked} > 86400;
@@ -1749,7 +1809,7 @@ our @ISA = ('FHEM::APIs::Weather::GeoSphereAPI');
 {
   "abstract": "GeoSphere Austria observations, forecasts, nowcast and warnings for FHEM Weather",
   "keywords": ["fhem-mod-device", "Weather", "API", "GeoSphere"],
-  "version": "v0.2.9",
+  "version": "v0.2.10",
   "release_status": "testing",
   "license": "GPL_2",
   "author": ["GeoSphereAPI contributors"],

@@ -1,13 +1,14 @@
-# Testnachweis GeoSphereAPI 0.2.9
+# Testnachweis GeoSphereAPI 0.2.10
 
-20.10.2026, Perl 5.40.1, Python 3.13, Testzeitzone Europe/Vienna.
+22.10.2026, Perl 5.40.1, Python 3.13, Testzeitzone Europe/Vienna.
 Das Paket enthält ausschließlich den neuen Provider und seine Begleitdateien.
 Kein Weather-Patch und keine Tests gegen einen veränderten Weather-Kern.
 
 ## Erfolgreiche Prüfungen
 
-741 Perl-Assertions:
-- 59 allgemeine Provider-Tests.
+771 Perl-Assertions:
+- 73 allgemeine Provider-Tests, einschließlich abgefangener ungültiger
+  Standort-, Options- und Timeout-Konfigurationen.
 - 58 Stations-/Warnungstests.
 - 27 Höhen-/Auswahltests.
 - 39 Tests getrennter Prognosegültigkeit.
@@ -23,9 +24,12 @@ Kein Weather-Patch und keine Tests gegen einen veränderten Weather-Kern.
   lokale Zeitgrenzen, getrennte Regen-/Schneemengen, richtige Mitternachts-
   attribution, 23/25-Stunden-Tage, Teilabdeckung, fehlende Daten und eine
   separate Tageszusammenfassung.
-- Je 90 Integrationsprüfungen mit unverändertem aktuellem Weather-Kern und
+- Je 98 Integrationsprüfungen mit unverändertem aktuellem Weather-Kern und
   unveränderter monolithischer Weather-Referenz von 2022. Darin enthalten:
-  tatsächliche Veröffentlichung aller neuen Felder über den Weather-Rückruf.
+  tatsächliche Veröffentlichung aller neuen Felder über den Weather-Rückruf
+  sowie ungültiger Standort, ungültige Höhe und ungültige Stationswahl. Deren
+  Fehler erscheinen als Readings, ohne aus `Weather Define` beziehungsweise
+  der Aktualisierung zu entweichen.
 
 Ein Python-Installer-Testfall prüft mehrere Bedingungen:
 Syntaxprüfung vor Installation, Check-only ohne Änderungen, bytegenaue
@@ -34,6 +38,21 @@ unveränderter Weather-Kern und idempotente Wiederholung.
 
 Zusätzlich: perl -c und podchecker erfolgreich, Code mit Perl::Tidy formatiert.
 Der frühere optionale Kernpatch-Testlauf wird nicht mehr mitgezählt.
+
+## Lokaler FHEM-Integrationstest 0.2.10
+
+Am 22.10.2026 wurde der finale Provider zusätzlich in einem laufenden FHEM
+mit unverändertem Weather v2.3.3 (FHEM fhem.pl 31759, Perl 5.40.1) getestet.
+Die zuvor unter 0.2.9 reproduzierbare unvollständige Standortdefinition
+`location=48.2213` beendete FHEM nicht mehr. `state`, `status` und `lastError`
+enthielten stattdessen die Konfigurationsmeldung mit einem direkt verwendbaren
+öffentlichen Beispielstandort. Die MainPID blieb unverändert.
+
+Zusätzlich wurden `timeout:0` und ein nichtnumerisches
+`geoSphereAltitude` abgefangen, ohne den FHEM-Prozess zu beenden. Nach der
+Rückkehr zu einer gültigen Definition aktualisierte sich dasselbe Testdevice
+ohne Neustart wieder erfolgreich: `status=ok`, leeres `lastError`,
+`validity=up-to-date` und aktuelle Stationswerte von Wien/Hohe Warte.
 
 ## Live-Test der funktional unveränderten Version 0.2.7 am öffentlichen Beispielstandort
 
@@ -68,7 +87,7 @@ Linux/SSH – im entpackten Paketverzeichnis als eigener Arbeitsschritt:
 TZ=Europe/Vienna python3 tests/run_all.py
 ~~~
 
-Erwartet: 741 erfolgreiche Perl-Assertions und ein erfolgreicher Python-
+Erwartet: 771 erfolgreiche Perl-Assertions und ein erfolgreicher Python-
 Installer-Testfall. Es wird kein produktiver FHEM-Server verändert.
 
 Linux/SSH – separater optionaler Live-Test:
@@ -86,4 +105,5 @@ Die Vertragstests laden unveränderte Weather-Quellen, simulieren aber FHEM-
 Laufzeitdienste. Produktiver Neustart, grafische Anzeige, HomeMode-Texte,
 private Automationen und Langzeitbetrieb sind vor Ort zu prüfen. 0.2.8 wurde
 vom Nutzer produktiv betrieben; 0.2.9 korrigiert die Veröffentlichung von
-`wind_condition`. Keine Kernänderung ausgeführt.
+`wind_condition`; 0.2.10 fängt Konfigurationsfehler im Provider ab. Keine
+Kernänderung ausgeführt.
