@@ -1,4 +1,4 @@
-# GeoSphereAPI 0.2.11 für FHEM Weather
+# GeoSphereAPI 0.2.12 für FHEM Weather
 
 Beta-Provider für österreichische Stationsmesswerte, Stundenprognosen,
 aggregierte Tagesprognosen, optionale Warnungen und 15-Minuten-Niederschlagsnowcast.
@@ -329,6 +329,41 @@ Die Intervalle werden bei Wetterupdates neu auf die aktuelle Zeit bezogen;
 nowcastFetchedAt zeigt den echten Abruf und wird durch Cachebenutzung nicht
 fälschlich erneuert. Fehler bestätigen niemals Trockenheit. Auslaufende
 rain15m-Indizes werden entfernt. Status nowcastStatus/nowcastValidity beachten.
+
+## Grafische Darstellung in FHEMWEB
+
+Für die allgemeinen Weather-Prognosen werden die vorhandenen Funktionen des
+Weather-Kerns verwendet:
+
+```text
+define wl_geosphere_stunden weblink htmlCode { WeatherAsHtmlH("wetter_geosphere","h",10) }
+```
+
+```text
+define wl_geosphere_tage weblink htmlCode { WeatherAsHtmlH("wetter_geosphere","d",3) }
+```
+
+Die Anzahl der verfügbaren Tageswerte steht in `forecastDaysAvailable`.
+`WeatherAsHtmlH` wird direkt aufgerufen, damit der aktuelle Weather-Kern die
+Anzahl nicht über `WeatherAsHtmlD` zweimal aufbereitet.
+
+GeoSphereAPI stellt für die providerspezifischen 15-Minuten-Werte zusätzlich
+eine optionale HTML-Hilfsfunktion bereit:
+
+```text
+define wl_geosphere_regen weblink htmlCode { GeoSphereNowcastAsHtml("wetter_geosphere",12) }
+```
+
+Die Funktion:
+
+- erzeugt höchstens die angeforderte Anzahl von Balken und niemals mehr als
+  `nowcastPoints`;
+- markiert `rain15m_01_mm` als aktuell laufendes Viertelstundenintervall;
+- verwendet `rain15m_NN_time` für die Zeitbeschriftung;
+- skaliert die Balken relativ zur größten dargestellten Intervallmenge;
+- zeigt `nowcastStatus`, `nowcastLastError`, `nowcastValidity` und
+  `nowcastReferenceTime` in geeigneter Form;
+- benötigt kein DbLog und legt selbst kein Device an.
 
 ## Warnungen und Fehlerzustände
 

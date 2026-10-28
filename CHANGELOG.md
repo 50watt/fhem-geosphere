@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.12 – 2026-10-28 – beta, API-only
+
+- Add optional `GeoSphereNowcastAsHtml` FHEMWEB rendering for the
+  provider-specific 15-minute precipitation intervals.
+- Limit rendered bars by both the requested maximum and `nowcastPoints`;
+  distinguish the running quarter hour and show validity/reference details.
+- Document copy-ready hourly, daily and nowcast weblinks.
+- Keep the Weather core and device configuration unchanged.
+
 ## 0.2.11 – 2026-10-28 – beta, API-only
 
 - Format hourly `day_of_week` as localized abbreviated weekday plus

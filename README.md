@@ -1,12 +1,21 @@
 # GeoSphereAPI für FHEM Weather
 
-Testversion 0.2.11 · Maintainer: **50watt**
+Testversion 0.2.12 · Maintainer: **50watt**
 
 GeoSphereAPI bringt österreichische Stationsmesswerte, Stundenprognosen und daraus
 abgeleitete Tagesprognosen, einen 15-Minuten-Niederschlagsnowcast und standortbezogene
 Wetterwarnungen in das FHEM-Weather-Modul. Ohne API-Schlüssel, mit automatischer
 Stationswahl unter Berücksichtigung der Entfernung und Höhenlage sowie
 nachvollziehbaren Angaben zu Datenalter und Gültigkeit.
+
+## Änderungen in 0.2.12
+
+- Ergänzt `GeoSphereNowcastAsHtml` als optionale FHEMWEB-Darstellung der
+  vorhandenen 15-Minuten-Niederschlagswerte. Die Funktion begrenzt sich
+  automatisch auf `nowcastPoints`, kennzeichnet das laufende Intervall und
+  zeigt Status, Gültigkeit sowie Referenzzeit.
+- Dokumentiert kopierbare Weblinks für Stunden-, Tages- und Nowcast-Anzeige.
+- Keine Änderung am Weather-Kern und keine automatische Device-Anlage.
 
 ## Änderungen in 0.2.11
 
@@ -90,7 +99,7 @@ zuverlässig neu. Direkt nach dem Neustart kann das Reading `apiVersion` noch di
 alte Version anzeigen: FHEM stellt zunächst die gespeicherten Readings wieder her.
 Erst bei einer Datenaktualisierung wird auch `apiVersion` neu geschrieben.
 Bei einem bestehenden GeoSphere-Gerät daher die nächste Datenaktualisierung
-abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.11`.
+abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.12`.
 Bei einer Erstinstallation anschließend das Weather-Device definieren.
 
 ## Definition
@@ -189,6 +198,42 @@ nach einem neuen `define` bleibt das Device dagegen bis zum ersten Abruf auf
 `Initialized`. GeoSphereAPI startet im Konstruktor bewusst keinen eigenen
 parallelen Timer.
 
+## Grafische Darstellung in FHEMWEB
+
+Die Standardfunktionen des Weather-Moduls können Stunden- und Tagesprognosen
+als Weblink darstellen. `wetter_geosphere` ist dabei durch den eigenen
+Device-Namen zu ersetzen.
+
+Zehn Stunden horizontal:
+
+```text
+define wl_geosphere_stunden weblink htmlCode { WeatherAsHtmlH("wetter_geosphere","h",10) }
+```
+
+Drei verfügbare Prognosetage horizontal:
+
+```text
+define wl_geosphere_tage weblink htmlCode { WeatherAsHtmlH("wetter_geosphere","d",3) }
+```
+
+Die tatsächlich verfügbare Tageszahl steht im Reading
+`forecastDaysAvailable`. Die direkte horizontale Funktion wird empfohlen,
+da `WeatherAsHtmlD` in aktuellen Weather-Versionen die Anzahl intern zweimal
+aufbereitet und dadurch eine zusätzliche leere Spalte anzeigen kann.
+
+Bei aktiviertem GeoSphere-Nowcast stellt die providerspezifische Hilfsfunktion
+bis zu zwölf 15-Minuten-Intervalle als Regenbalken dar:
+
+```text
+define wl_geosphere_regen weblink htmlCode { GeoSphereNowcastAsHtml("wetter_geosphere",12) }
+```
+
+`rain15m_01_mm` ist das aktuell laufende Viertelstundenintervall und wird als
+`aktuell` markiert. Die folgenden Balken sind die zukünftigen Intervalle.
+Die Funktion verwendet höchstens die in `nowcastPoints` gemeldete Anzahl.
+Ohne gültigen Nowcast zeigt sie statt leerer Balken den Status und gegebenenfalls
+`nowcastLastError`.
+
 Die API wählt automatisch eine geeignete GeoSphere-Wetterstation in der Nähe.
 Dabei berücksichtigt sie die Entfernung, den Höhenunterschied zum Standort
 und die Verfügbarkeit aktueller Messwerte. Die Standorthöhe kann über
@@ -201,7 +246,7 @@ Alternativ lässt sich die Station in FHEMWEB über das Dropdown des Attributs
 der Stationsmetadaten bereit.
 
 Erwartet nach der ersten Datenaktualisierung: `status=ok`, Stationsmesswerte,
-`apiVersion=0.2.11` und eine nachvollziehbare Standortquelle. Bei Variante 1
+`apiVersion=0.2.12` und eine nachvollziehbare Standortquelle. Bei Variante 1
 steht `locationSource=global`, bei Variante 2 und 3 `locationSource=device`.
 Weitere Attribute, Prognosen, Warnungen, Gültigkeit
 und bekannte Grenzen sind in [DOKUMENTATION.md](DOKUMENTATION.md) beschrieben.

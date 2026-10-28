@@ -1,14 +1,15 @@
-# Testnachweis GeoSphereAPI 0.2.10
+# Testnachweis GeoSphereAPI 0.2.12
 
-22.10.2026, Perl 5.40.1, Python 3.13, Testzeitzone Europe/Vienna.
+28.10.2026, Perl 5.40.1, Python 3.13, Testzeitzone Europe/Vienna.
 Das Paket enthält ausschließlich den neuen Provider und seine Begleitdateien.
 Kein Weather-Patch und keine Tests gegen einen veränderten Weather-Kern.
 
 ## Erfolgreiche Prüfungen
 
-771 Perl-Assertions:
-- 73 allgemeine Provider-Tests, einschließlich abgefangener ungültiger
-  Standort-, Options- und Timeout-Konfigurationen.
+780 Perl-Assertions:
+- 80 allgemeine Provider-Tests, einschließlich abgefangener ungültiger
+  Standort-, Options- und Timeout-Konfigurationen sowie der optionalen
+  Nowcast-HTML-Darstellung, Balkenbegrenzung und HTML-Escaping.
 - 58 Stations-/Warnungstests.
 - 27 Höhen-/Auswahltests.
 - 39 Tests getrennter Prognosegültigkeit.
@@ -24,7 +25,7 @@ Kein Weather-Patch und keine Tests gegen einen veränderten Weather-Kern.
   lokale Zeitgrenzen, getrennte Regen-/Schneemengen, richtige Mitternachts-
   attribution, 23/25-Stunden-Tage, Teilabdeckung, fehlende Daten und eine
   separate Tageszusammenfassung.
-- Je 98 Integrationsprüfungen mit unverändertem aktuellem Weather-Kern und
+- Je 99 Integrationsprüfungen mit unverändertem aktuellem Weather-Kern und
   unveränderter monolithischer Weather-Referenz von 2022. Darin enthalten:
   tatsächliche Veröffentlichung aller neuen Felder über den Weather-Rückruf
   sowie ungültiger Standort, ungültige Höhe und ungültige Stationswahl. Deren
@@ -53,6 +54,16 @@ Zusätzlich wurden `timeout:0` und ein nichtnumerisches
 Rückkehr zu einer gültigen Definition aktualisierte sich dasselbe Testdevice
 ohne Neustart wieder erfolgreich: `status=ok`, leeres `lastError`,
 `validity=up-to-date` und aktuelle Stationswerte von Wien/Hohe Warte.
+
+## Lokale Prüfung 0.2.12
+
+Die Provider-Syntaxprüfung und alle 80 allgemeinen Provider-Assertions liefen
+erfolgreich. Darin enthalten sind die lokalisierte Nowcast-Überschrift, die
+Begrenzung auf die angeforderte Balkenzahl, die Kennzeichnung des laufenden
+Viertelstundenintervalls, sichtbare GeoSphere-Attribution und HTML-Escaping von
+Fehlermeldungen. Zusätzlich bestanden jeweils 99 Vertragsprüfungen gegen den
+unveränderten modularen Weather-Kern und die unveränderte monolithische
+Weather-Referenz von 2022.
 
 ## Live-Test der funktional unveränderten Version 0.2.7 am öffentlichen Beispielstandort
 
@@ -87,7 +98,7 @@ Linux/SSH – im entpackten Paketverzeichnis als eigener Arbeitsschritt:
 TZ=Europe/Vienna python3 tests/run_all.py
 ~~~
 
-Erwartet: 771 erfolgreiche Perl-Assertions und ein erfolgreicher Python-
+Erwartet: 780 erfolgreiche Perl-Assertions und ein erfolgreicher Python-
 Installer-Testfall. Es wird kein produktiver FHEM-Server verändert.
 
 Linux/SSH – separater optionaler Live-Test:
@@ -105,5 +116,6 @@ Die Vertragstests laden unveränderte Weather-Quellen, simulieren aber FHEM-
 Laufzeitdienste. Produktiver Neustart, grafische Anzeige, HomeMode-Texte,
 private Automationen und Langzeitbetrieb sind vor Ort zu prüfen. 0.2.8 wurde
 vom Nutzer produktiv betrieben; 0.2.9 korrigiert die Veröffentlichung von
-`wind_condition`; 0.2.10 fängt Konfigurationsfehler im Provider ab. Keine
-Kernänderung ausgeführt.
+`wind_condition`; 0.2.10 fängt Konfigurationsfehler im Provider ab. 0.2.11
+formatiert Stundenbeschriftungen kompakt; 0.2.12 ergänzt eine optionale
+Nowcast-HTML-Darstellung. Keine Kernänderung ausgeführt.

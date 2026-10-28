@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # $Id$
-# GeoSphere Austria provider for FHEM Weather. Version 0.2.11, beta.
+# GeoSphere Austria provider for FHEM Weather. Version 0.2.12, beta.
 # Data: GeoSphere Austria, CC BY 4.0. See README.md for attribution.
 package FHEM::APIs::Weather::GeoSphereAPI;
 
@@ -12,7 +12,7 @@ use POSIX        qw(strftime);
 use Time::Local  qw(timegm timelocal);
 use Scalar::Util qw(looks_like_number refaddr);
 
-our $VERSION = '0.2.11';
+our $VERSION = '0.2.12';
 
 # Use the standard FHEM metadata loader when running inside FHEM. Standalone
 # parser/installer checks deliberately need no complete FHEM installation.
@@ -1698,6 +1698,150 @@ sub _display_time {
     return strftime( '%d.%m.%Y %H:%M:%S %Z', localtime($epoch) );
 }
 
+
+sub _html_escape {
+    my ($value) = @_;
+    $value = '' unless defined $value;
+    $value = "$value";
+    $value =~ s/&/&amp;/g;
+    $value =~ s/</&lt;/g;
+    $value =~ s/>/&gt;/g;
+    $value =~ s/"/&quot;/g;
+    $value =~ s/'/&#39;/g;
+    return $value;
+}
+
+sub _nowcast_reading {
+    my ( $hash, $reading, $default ) = @_;
+    return $default
+      unless ref($hash) eq 'HASH'
+      && ref( $hash->{READINGS} ) eq 'HASH'
+      && ref( $hash->{READINGS}{$reading} ) eq 'HASH'
+      && defined $hash->{READINGS}{$reading}{VAL};
+    return $hash->{READINGS}{$reading}{VAL};
+}
+
+sub _nowcast_clock {
+    my ($value) = @_;
+    return '' unless defined $value;
+    return $1 if "$value" =~ /(?:^|\s)(\d{2}:\d{2})(?::\d{2})?(?:\s|$)/;
+    return "$value";
+}
+
+sub _nowcast_html_message {
+    my ( $message, $detail ) = @_;
+    $detail = defined $detail && $detail ne ''
+      ? '<div style="font-size:.82em;opacity:.72;margin-top:.25em">'
+      . _html_escape($detail) . '</div>'
+      : '';
+    return '<div class="geosphereNowcast" style="padding:.8em">'
+      . '<strong>' . _html_escape($message) . '</strong>' . $detail . '</div>';
+}
+
+# Public FHEMWEB helper for the provider-specific 15-minute precipitation data.
+sub ::GeoSphereNowcastAsHtml { goto &GeoSphereNowcastAsHtml }
+
+sub GeoSphereNowcastAsHtml {
+    my ( $device, $maximum ) = @_;
+    $device = '' unless defined $device;
+
+    no warnings 'once';
+    my $hash = $main::defs{$device};
+    return _nowcast_html_message( 'GeoSphere-Nowcast: Device nicht gefunden', $device )
+      unless ref($hash) eq 'HASH';
+
+    my $lang = lc( $hash->{LANG} // 'de' );
+    my $de   = $lang =~ /^de/;
+    my $status = _nowcast_reading( $hash, 'nowcastStatus', 'unknown' );
+    if ( $status ne 'ok' ) {
+        my $error = _nowcast_reading( $hash, 'nowcastLastError', '' );
+        my $label = $de ? 'Niederschlags-Nowcast nicht verfügbar'
+          : 'Precipitation nowcast unavailable';
+        return _nowcast_html_message( "$label: $status", $error );
+    }
+
+    my $available = int( _number( _nowcast_reading( $hash, 'nowcastPoints', 0 ) ) // 0 );
+    my $limit = _number($maximum);
+    $limit = 12 unless defined $limit && $limit >= 1;
+    $limit = int($limit);
+    $limit = 24 if $limit > 24;
+    my $count = $available < $limit ? $available : $limit;
+    return _nowcast_html_message(
+        $de ? 'Keine 15-Minuten-Niederschlagswerte verfügbar'
+          : 'No 15-minute precipitation values available',
+        ''
+    ) if $count < 1;
+
+    my @rows;
+    my $scale = 0;
+    for my $index ( 1 .. $count ) {
+        my $prefix = sprintf( 'rain15m_%02d_', $index );
+        my $amount = _number( _nowcast_reading( $hash, $prefix . 'mm', undef ) );
+        next unless defined $amount && $amount >= 0;
+        my $start = _nowcast_reading( $hash, $prefix . 'periodStart', '' );
+        my $end   = _nowcast_reading( $hash, $prefix . 'time',        '' );
+        push @rows, {
+            amount => $amount,
+            start  => $start,
+            end    => $end,
+            clock  => _nowcast_clock($end),
+            current => $index == 1 ? 1 : 0,
+        };
+        $scale = $amount if $amount > $scale;
+    }
+    return _nowcast_html_message(
+        $de ? 'Keine gültigen 15-Minuten-Niederschlagswerte verfügbar'
+          : 'No valid 15-minute precipitation values available',
+        ''
+    ) unless @rows;
+
+    $scale = 0.1 if $scale < 0.1;
+    my $bars = '';
+    for my $row (@rows) {
+        my $height = $row->{amount} > 0
+          ? int( 92 * $row->{amount} / $scale + 0.5 )
+          : 4;
+        $height = 8 if $row->{amount} > 0 && $height < 8;
+        my $colour =
+            $row->{amount} <= 0   ? '#b0bec5'
+          : $row->{amount} < 0.1  ? '#90caf9'
+          : $row->{amount} < 0.5  ? '#42a5f5'
+          : $row->{amount} < 2    ? '#1976d2'
+          :                         '#0d47a1';
+        my $amount = sprintf( '%.2f', $row->{amount} );
+        $amount =~ s/(\.\d*?)0+$/$1/;
+        $amount =~ s/\.$//;
+        my $period = join ' – ', grep { $_ ne '' }
+          map { _nowcast_clock($_) } ( $row->{start}, $row->{end} );
+        my $current = $row->{current}
+          ? '<div style="font-size:.68em;opacity:.68">'
+            . ( $de ? 'aktuell' : 'current' ) . '</div>'
+          : '<div style="font-size:.68em">&nbsp;</div>';
+        $bars .= '<div style="flex:1 0 46px;min-width:46px;text-align:center">'
+          . '<div style="font-size:.78em;margin-bottom:.2em">' . _html_escape($amount)
+          . '</div><div title="' . _html_escape("$period | $amount mm")
+          . '" style="height:' . $height . 'px;max-width:34px;margin:0 auto;'
+          . 'background:' . $colour . ';border-radius:4px 4px 1px 1px"></div>'
+          . '<div style="font-size:.75em;margin-top:.3em">'
+          . _html_escape( $row->{clock} ) . '</div>' . $current . '</div>';
+    }
+
+    my $reference = _nowcast_reading( $hash, 'nowcastReferenceTime', '' );
+    my $validity  = _nowcast_reading( $hash, 'nowcastValidity',    '' );
+    my $title = $de ? 'Niederschlags-Nowcast' : 'Precipitation nowcast';
+    my $footer = 'GeoSphere Austria · mm/15 min';
+    $footer .= ' · ' . $validity if $validity ne '';
+    $footer .= ' · ' . ( $de ? 'Referenz ' : 'reference ' ) . $reference
+      if $reference ne '';
+
+    return '<div class="geosphereNowcast" style="padding:.55em;max-width:100%;'
+      . 'box-sizing:border-box"><div style="font-weight:600;margin-bottom:.5em">'
+      . _html_escape($title) . '</div><div style="height:142px;display:flex;'
+      . 'align-items:flex-end;gap:5px;overflow-x:auto;padding:.2em 0">'
+      . $bars . '</div><div style="font-size:.72em;opacity:.68;margin-top:.35em">'
+      . _html_escape($footer) . '</div></div>';
+}
+
 sub _display_iso {
     my ($value) = @_;
     return '' unless defined $value && $value ne '';
@@ -1810,7 +1954,7 @@ our @ISA = ('FHEM::APIs::Weather::GeoSphereAPI');
 {
   "abstract": "GeoSphere Austria observations, forecasts, nowcast and warnings for FHEM Weather",
   "keywords": ["fhem-mod-device", "Weather", "API", "GeoSphere"],
-  "version": "v0.2.11",
+  "version": "v0.2.12",
   "release_status": "testing",
   "license": "GPL_2",
   "author": ["GeoSphereAPI contributors"],
@@ -1851,7 +1995,13 @@ periodStart and time expose its local boundaries. rainNextHour sums the next
 four intervals, including the currently running quarter hour. Its From/To
 readings expose the actual window; this is not a sliding 60-minute forecast.
 Check nowcastStatus=ok before using rainNextHour. Errors/missing data produce
-unknown, never a dry confirmation. Reference age is limited to 2700 seconds;
+unknown, never a dry confirmation. A provider-specific FHEMWEB chart can be
+created with:
+
+  define GeoSphereRainWeblink weblink htmlCode { GeoSphereNowcastAsHtml("WeatherAT",12) }
+
+The second argument limits the displayed intervals and defaults to twelve.
+Reference age is limited to 2700 seconds;
 raw responses are cached at most 900 seconds. This optional request runs after
 warnings and cannot turn a rain-only failure into a weather/warning failure.
 

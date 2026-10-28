@@ -106,6 +106,39 @@ for my $case (['2026-10-25',25], ['2026-03-29',23]) {
 # Exercise the real asynchronous provider entry point with a fake HTTP transport.
 our (%defs, @queue, $notifications);
 $notifications = 0;
+
+$defs{nowcastDisplay} = {
+    NAME => 'nowcastDisplay',
+    TYPE => 'Weather',
+    LANG => 'de',
+    READINGS => {
+        nowcastStatus        => { VAL => 'ok' },
+        nowcastValidity      => { VAL => 'up-to-date' },
+        nowcastReferenceTime => { VAL => '17.10.2026 12:00:00 CEST' },
+        nowcastPoints        => { VAL => 3 },
+        rain15m_01_mm          => { VAL => 0 },
+        rain15m_01_periodStart => { VAL => '17.10.2026 12:00:00 CEST' },
+        rain15m_01_time        => { VAL => '17.10.2026 12:15:00 CEST' },
+        rain15m_02_mm          => { VAL => 0.2 },
+        rain15m_02_periodStart => { VAL => '17.10.2026 12:15:00 CEST' },
+        rain15m_02_time        => { VAL => '17.10.2026 12:30:00 CEST' },
+        rain15m_03_mm          => { VAL => 1.5 },
+        rain15m_03_periodStart => { VAL => '17.10.2026 12:30:00 CEST' },
+        rain15m_03_time        => { VAL => '17.10.2026 12:45:00 CEST' },
+    },
+};
+my $nowcastHtml = GeoSphereNowcastAsHtml( 'nowcastDisplay', 2 );
+like( $nowcastHtml, qr/Niederschlags-Nowcast/, 'nowcast HTML has localized title' );
+like( $nowcastHtml, qr/12:15/, 'nowcast HTML contains first interval end' );
+like( $nowcastHtml, qr/12:30/, 'nowcast HTML contains second interval end' );
+unlike( $nowcastHtml, qr/12:45/, 'requested maximum limits nowcast bars' );
+like( $nowcastHtml, qr/aktuell/, 'running quarter hour is identified' );
+like( $nowcastHtml, qr/GeoSphere Austria/, 'nowcast attribution is visible' );
+$defs{nowcastDisplay}{READINGS}{nowcastStatus}{VAL} = 'error';
+$defs{nowcastDisplay}{READINGS}{nowcastLastError} = { VAL => '<transport>' };
+$nowcastHtml = GeoSphereNowcastAsHtml( 'nowcastDisplay', 12 );
+like( $nowcastHtml, qr/&lt;transport&gt;/, 'nowcast error is HTML escaped' );
+
 sub HttpUtils_NonblockingGet { push @queue, $_[0]; }
 {
     no warnings 'redefine';
