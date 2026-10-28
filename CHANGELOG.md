@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.13 – 2026-10-28 – beta, API-only
+
+- Return `GeoSphereNowcastAsHtml` as UTF-8 octets at the FHEMWEB boundary,
+  preventing double encoding of degree signs in adjacent Weather HTML.
+- Decode UTF-8 reading octets before HTML escaping and retain a safe fallback
+  for malformed input.
+- Keep nowcast values and the `mm/15 min` interval unit unchanged.
+
 ## 0.2.12 – 2026-10-28 – beta, API-only
 
 - Add optional `GeoSphereNowcastAsHtml` FHEMWEB rendering for the

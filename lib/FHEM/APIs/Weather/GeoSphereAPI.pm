@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # $Id$
-# GeoSphere Austria provider for FHEM Weather. Version 0.2.12, beta.
+# GeoSphere Austria provider for FHEM Weather. Version 0.2.13, beta.
 # Data: GeoSphere Austria, CC BY 4.0. See README.md for attribution.
 package FHEM::APIs::Weather::GeoSphereAPI;
 
@@ -12,7 +12,7 @@ use POSIX        qw(strftime);
 use Time::Local  qw(timegm timelocal);
 use Scalar::Util qw(looks_like_number refaddr);
 
-our $VERSION = '0.2.12';
+our $VERSION = '0.2.13';
 
 # Use the standard FHEM metadata loader when running inside FHEM. Standalone
 # parser/installer checks deliberately need no complete FHEM installation.
@@ -23,7 +23,7 @@ if ( eval { require FHEM::Meta; FHEM::Meta->can('getMetadata') } ) {
     no warnings 'once';
     $main::packages{GeoSphereAPI}{META} = $META;
 }
-use Encode             qw(encode_utf8);
+use Encode             qw(decode encode_utf8 FB_CROAK);
 use Unicode::Normalize qw(NFKD);
 my %METADATA;
 my $BASE = 'https://dataset.api.hub.geosphere.at/v1';
@@ -1703,6 +1703,11 @@ sub _html_escape {
     my ($value) = @_;
     $value = '' unless defined $value;
     $value = "$value";
+    if ( !utf8::is_utf8($value) && $value =~ /[^\x00-\x7f]/ ) {
+        my $bytes   = $value;
+        my $decoded = eval { decode( 'UTF-8', $bytes, FB_CROAK ) };
+        $value = $decoded if defined $decoded && !$@;
+    }
     $value =~ s/&/&amp;/g;
     $value =~ s/</&lt;/g;
     $value =~ s/>/&gt;/g;
@@ -1739,7 +1744,11 @@ sub _nowcast_html_message {
 }
 
 # Public FHEMWEB helper for the provider-specific 15-minute precipitation data.
-sub ::GeoSphereNowcastAsHtml { goto &GeoSphereNowcastAsHtml }
+sub ::GeoSphereNowcastAsHtml {
+    my $html =
+      FHEM::APIs::Weather::GeoSphereAPI::GeoSphereNowcastAsHtml(@_);
+    return utf8::is_utf8($html) ? Encode::encode_utf8($html) : $html;
+}
 
 sub GeoSphereNowcastAsHtml {
     my ( $device, $maximum ) = @_;
@@ -1954,7 +1963,7 @@ our @ISA = ('FHEM::APIs::Weather::GeoSphereAPI');
 {
   "abstract": "GeoSphere Austria observations, forecasts, nowcast and warnings for FHEM Weather",
   "keywords": ["fhem-mod-device", "Weather", "API", "GeoSphere"],
-  "version": "v0.2.12",
+  "version": "v0.2.13",
   "release_status": "testing",
   "license": "GPL_2",
   "author": ["GeoSphereAPI contributors"],

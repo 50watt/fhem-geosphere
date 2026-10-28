@@ -4,6 +4,7 @@ use warnings;
 use utf8;
 use Test::More;
 use JSON::PP qw(decode_json encode_json);
+use Encode qw(decode_utf8 encode_utf8);
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use POSIX qw(tzset);
@@ -134,10 +135,14 @@ like( $nowcastHtml, qr/12:30/, 'nowcast HTML contains second interval end' );
 unlike( $nowcastHtml, qr/12:45/, 'requested maximum limits nowcast bars' );
 like( $nowcastHtml, qr/aktuell/, 'running quarter hour is identified' );
 like( $nowcastHtml, qr/GeoSphere Austria/, 'nowcast attribution is visible' );
+ok( !utf8::is_utf8($nowcastHtml), 'public nowcast HTML uses FHEMWEB UTF-8 octets' );
 $defs{nowcastDisplay}{READINGS}{nowcastStatus}{VAL} = 'error';
-$defs{nowcastDisplay}{READINGS}{nowcastLastError} = { VAL => '<transport>' };
+$defs{nowcastDisplay}{READINGS}{nowcastLastError} =
+  { VAL => encode_utf8('Übertragung <transport>') };
 $nowcastHtml = GeoSphereNowcastAsHtml( 'nowcastDisplay', 12 );
-like( $nowcastHtml, qr/&lt;transport&gt;/, 'nowcast error is HTML escaped' );
+my $decodedNowcastHtml = decode_utf8($nowcastHtml);
+like( $decodedNowcastHtml, qr/Übertragung &lt;transport&gt;/,
+    'UTF-8 nowcast error is decoded once and HTML escaped' );
 
 sub HttpUtils_NonblockingGet { push @queue, $_[0]; }
 {

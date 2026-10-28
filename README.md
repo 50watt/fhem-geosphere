@@ -1,12 +1,21 @@
 # GeoSphereAPI für FHEM Weather
 
-Testversion 0.2.12 · Maintainer: **50watt**
+Testversion 0.2.13 · Maintainer: **50watt**
 
 GeoSphereAPI bringt österreichische Stationsmesswerte, Stundenprognosen und daraus
 abgeleitete Tagesprognosen, einen 15-Minuten-Niederschlagsnowcast und standortbezogene
 Wetterwarnungen in das FHEM-Weather-Modul. Ohne API-Schlüssel, mit automatischer
 Stationswahl unter Berücksichtigung der Entfernung und Höhenlage sowie
 nachvollziehbaren Angaben zu Datenalter und Gültigkeit.
+
+## Änderungen in 0.2.13
+
+- Gibt `GeoSphereNowcastAsHtml` an der FHEMWEB-Grenze ausdrücklich als
+  UTF-8-Bytefolge zurück. Dadurch werden Gradzeichen und Umlaute aus anderen
+  Weather-Weblinks beim gemeinsamen Seitenaufbau nicht mehr doppelt codiert.
+- Dekodiert nicht-ASCII-Readingwerte vor dem HTML-Escaping kontrolliert als
+  UTF-8 und behält bei ungültigen Bytefolgen einen sicheren Rückfall.
+- Keine Änderung an den Nowcast-Werten oder der Einheit `mm/15 min`.
 
 ## Änderungen in 0.2.12
 
@@ -99,7 +108,7 @@ zuverlässig neu. Direkt nach dem Neustart kann das Reading `apiVersion` noch di
 alte Version anzeigen: FHEM stellt zunächst die gespeicherten Readings wieder her.
 Erst bei einer Datenaktualisierung wird auch `apiVersion` neu geschrieben.
 Bei einem bestehenden GeoSphere-Gerät daher die nächste Datenaktualisierung
-abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.12`.
+abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.13`.
 Bei einer Erstinstallation anschließend das Weather-Device definieren.
 
 ## Definition
@@ -246,7 +255,7 @@ Alternativ lässt sich die Station in FHEMWEB über das Dropdown des Attributs
 der Stationsmetadaten bereit.
 
 Erwartet nach der ersten Datenaktualisierung: `status=ok`, Stationsmesswerte,
-`apiVersion=0.2.12` und eine nachvollziehbare Standortquelle. Bei Variante 1
+`apiVersion=0.2.13` und eine nachvollziehbare Standortquelle. Bei Variante 1
 steht `locationSource=global`, bei Variante 2 und 3 `locationSource=device`.
 Weitere Attribute, Prognosen, Warnungen, Gültigkeit
 und bekannte Grenzen sind in [DOKUMENTATION.md](DOKUMENTATION.md) beschrieben.

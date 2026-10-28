@@ -1,4 +1,4 @@
-# GeoSphereAPI 0.2.12 für FHEM Weather
+# GeoSphereAPI 0.2.13 für FHEM Weather
 
 Beta-Provider für österreichische Stationsmesswerte, Stundenprognosen,
 aggregierte Tagesprognosen, optionale Warnungen und 15-Minuten-Niederschlagsnowcast.
@@ -364,6 +364,13 @@ Die Funktion:
 - zeigt `nowcastStatus`, `nowcastLastError`, `nowcastValidity` und
   `nowcastReferenceTime` in geeigneter Form;
 - benötigt kein DbLog und legt selbst kein Device an.
+
+Die Hilfsfunktion liefert ihr Ergebnis als UTF-8-Bytefolge an FHEMWEB. Das ist
+wichtig, weil der ältere Weather-HTML-Code seine Gradzeichen ebenfalls als
+UTF-8-Bytes erzeugt. Eine Unicode-markierte Teilansicht könnte beim
+Zusammenfügen sonst zu einer zweiten Codierung und damit zu `Â°` führen.
+Die Prozess-Locale (`LANG`/`LC_TIME`) beeinflusst die Sprache von
+Wochentagen, ist aber nicht die Ursache dieses Zeichensatzfehlers.
 
 ## Warnungen und Fehlerzustände
 
