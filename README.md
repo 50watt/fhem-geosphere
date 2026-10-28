@@ -1,12 +1,25 @@
 # GeoSphereAPI für FHEM Weather
 
-Testversion 0.2.10 · Maintainer: **50watt**
+Testversion 0.2.11 · Maintainer: **50watt**
 
 GeoSphereAPI bringt österreichische Stationsmesswerte, Stundenprognosen und daraus
 abgeleitete Tagesprognosen, einen 15-Minuten-Niederschlagsnowcast und standortbezogene
 Wetterwarnungen in das FHEM-Weather-Modul. Ohne API-Schlüssel, mit automatischer
 Stationswahl unter Berücksichtigung der Entfernung und Höhenlage sowie
 nachvollziehbaren Angaben zu Datenalter und Gültigkeit.
+
+## Änderungen in 0.2.11
+
+- Zeigt Stundenprognosen in `WeatherAsHtmlH`, `WeatherAsHtmlV` und
+  `WeatherAsHtmlD` kompakt als lokalisierten Wochentag mit Uhrzeit an,
+  beispielsweise `Mi, 14:00`, statt als vollständiges Datum mit Sekunden
+  und Zeitzone.
+- Behält vollständige Zeitangaben in Mess-, Nowcast-, Warnungs- und
+  Diagnosereadings bei.
+- Die Sprache der Wochentagskürzel folgt der Laufzeit-Locale von FHEM
+  (insbesondere `LC_TIME`); für deutsche Kürzel muss auf dem FHEM-Host eine
+  deutsche Locale aktiv sein.
+- Keine Änderung am Weather-Kern erforderlich.
 
 ## Änderungen in 0.2.10
 
@@ -77,7 +90,7 @@ zuverlässig neu. Direkt nach dem Neustart kann das Reading `apiVersion` noch di
 alte Version anzeigen: FHEM stellt zunächst die gespeicherten Readings wieder her.
 Erst bei einer Datenaktualisierung wird auch `apiVersion` neu geschrieben.
 Bei einem bestehenden GeoSphere-Gerät daher die nächste Datenaktualisierung
-abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.10`.
+abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.11`.
 Bei einer Erstinstallation anschließend das Weather-Device definieren.
 
 ## Definition
@@ -188,7 +201,7 @@ Alternativ lässt sich die Station in FHEMWEB über das Dropdown des Attributs
 der Stationsmetadaten bereit.
 
 Erwartet nach der ersten Datenaktualisierung: `status=ok`, Stationsmesswerte,
-`apiVersion=0.2.10` und eine nachvollziehbare Standortquelle. Bei Variante 1
+`apiVersion=0.2.11` und eine nachvollziehbare Standortquelle. Bei Variante 1
 steht `locationSource=global`, bei Variante 2 und 3 `locationSource=device`.
 Weitere Attribute, Prognosen, Warnungen, Gültigkeit
 und bekannte Grenzen sind in [DOKUMENTATION.md](DOKUMENTATION.md) beschrieben.

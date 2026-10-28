@@ -1,3 +1,4 @@
+2026-10-28 GeoSphereAPI 0.2.11: Use compact localized weekday/time labels for hourly WeatherAsHtml forecasts.
 2026-10-22 GeoSphereAPI 0.2.10: Catch configuration errors without terminating FHEM; expose state, status and lastError.
 2026-10-20 GeoSphereAPI 0.2.9: Avoid empty wind_condition events; add safe north, calm and missing-value fallback.
 2026-10-18 GeoSphereAPI 0.2.8: Initial public test release; maintainer 50watt.

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # $Id$
-# GeoSphere Austria provider for FHEM Weather. Version 0.2.10, beta.
+# GeoSphere Austria provider for FHEM Weather. Version 0.2.11, beta.
 # Data: GeoSphere Austria, CC BY 4.0. See README.md for attribution.
 package FHEM::APIs::Weather::GeoSphereAPI;
 
@@ -12,7 +12,7 @@ use POSIX        qw(strftime);
 use Time::Local  qw(timegm timelocal);
 use Scalar::Util qw(looks_like_number refaddr);
 
-our $VERSION = '0.2.10';
+our $VERSION = '0.2.11';
 
 # Use the standard FHEM metadata loader when running inside FHEM. Standalone
 # parser/installer checks deliberately need no complete FHEM installation.
@@ -1726,7 +1726,8 @@ sub _localize_result {
     for my $kind (qw(hourly daily)) {
         for my $row ( @{ $result->{forecast}{$kind} // [] } ) {
             $row->{timestamp}   = $row->{pubDate} = _display_time( $row->{epoch} );
-            $row->{day_of_week} = $row->{timestamp} if $kind eq 'hourly';
+            $row->{day_of_week} = strftime( '%a, %H:%M', localtime( $row->{epoch} ) )
+              if $kind eq 'hourly';
             for my $key (
                 qw(periodStart periodEnd representativeTime precipitationPeriodStart precipitationPeriodEnd sunshinePeriodStart sunshinePeriodEnd)
               )
@@ -1809,7 +1810,7 @@ our @ISA = ('FHEM::APIs::Weather::GeoSphereAPI');
 {
   "abstract": "GeoSphere Austria observations, forecasts, nowcast and warnings for FHEM Weather",
   "keywords": ["fhem-mod-device", "Weather", "API", "GeoSphere"],
-  "version": "v0.2.10",
+  "version": "v0.2.11",
   "release_status": "testing",
   "license": "GPL_2",
   "author": ["GeoSphereAPI contributors"],

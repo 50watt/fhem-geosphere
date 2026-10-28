@@ -138,10 +138,12 @@ like(value('fc1_precipitationCoverage'),qr/^(?:complete|partial|unknown|missing)
 ok(defined value('fc1_rainTotal_mm'),'real core exposes daily liquid rain field');
 ok(defined value('fc1_sunshineCoverage'),'real core exposes daily sunshine scope');
 ok(defined value('fc1_summaryCondition'),'real core exposes separate daily summary');
-is($device->{fhem}{api}->getWeather->{apiVersion},'0.2.10','new provider loaded by unmodified core');
+is($device->{fhem}{api}->getWeather->{apiVersion},'0.2.11','new provider loaded by unmodified core');
 for my $reading (qw(measurementTime pubDate current_date_time forecastReferenceTime warningsFetchedAt hfc1_timestamp fc1_periodStart warn_0_Start)) {
  like(value($reading),qr/^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2} (?:CET|CEST)$/,"real core local display for $reading");
 }
+like(value('hfc1_day_of_week'), qr/^[^,\s]+, \d{2}:\d{2}$/,
+    'real core exposes compact localized weekday and time for hourly WeatherAsHtml');
 is(value('pressure'),1017.4,'real core writes reduced pressure');
 ok(defined value('fc1_low_c'),'HomeMode forecast low available');
 ok(defined value('fc2_high_c'),'HomeMode tomorrow high available');

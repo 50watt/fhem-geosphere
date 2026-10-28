@@ -1,4 +1,4 @@
-# GeoSphereAPI 0.2.10 für FHEM Weather
+# GeoSphereAPI 0.2.11 für FHEM Weather
 
 Beta-Provider für österreichische Stationsmesswerte, Stundenprognosen,
 aggregierte Tagesprognosen, optionale Warnungen und 15-Minuten-Niederschlagsnowcast.
@@ -471,3 +471,13 @@ FHEM-Diensten; sie ersetzen keinen vollständigen produktiven FHEM/HomeMode-Test
   symbolische Zustandsabbildung, Warnungsaufbereitung, Nowcast-Intervallsummen.
 - Programmcode GPL-2.0-or-later, siehe LICENSE. Prüfkopien behalten ihre
   eigenen Copyright- und Lizenzhinweise.
+
+
+## Format der Stundenprognose
+
+Stundenprognosen liefern in `day_of_week` beziehungsweise
+`hfcN_day_of_week` einen kompakten lokalisierten Text wie `Mi, 14:00`.
+Damit bleiben die Standardfunktionen `WeatherAsHtmlH`, `WeatherAsHtmlV`
+und `WeatherAsHtmlD` übersichtlich. Das Wochentagskürzel folgt der
+FHEM-Laufzeit-Locale (`LC_TIME`). Vollständige Zeitstempel bleiben in den
+dafür vorgesehenen Mess-, Nowcast-, Warnungs- und Diagnosereadings erhalten.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.11 – 2026-10-28 – beta, API-only
+
+- Format hourly `day_of_week` as localized abbreviated weekday plus
+  `HH:MM`, matching established Weather providers and keeping
+  `WeatherAsHtml*` output compact.
+- Keep full timestamps in `timestamp`, `pubDate`, observations, nowcast,
+  warnings and diagnostics.
+- Add a Weather-core contract assertion for the compact hourly label.
+- No Weather-core change or configuration migration required.
+
 ## 0.2.10 – 2026-10-22 – beta, API-only
 
 - Catch invalid location, altitude, station, API-option and timeout configuration
