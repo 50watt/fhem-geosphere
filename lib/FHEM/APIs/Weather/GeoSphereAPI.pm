@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # $Id$
-# GeoSphere Austria provider for FHEM Weather. Version 0.2.13, beta.
+# GeoSphere Austria provider for FHEM Weather. Version 0.2.14, beta.
 # Data: GeoSphere Austria, CC BY 4.0. See README.md for attribution.
 package FHEM::APIs::Weather::GeoSphereAPI;
 
@@ -12,7 +12,7 @@ use POSIX        qw(strftime);
 use Time::Local  qw(timegm timelocal);
 use Scalar::Util qw(looks_like_number refaddr);
 
-our $VERSION = '0.2.13';
+our $VERSION = '0.2.14';
 
 # Use the standard FHEM metadata loader when running inside FHEM. Standalone
 # parser/installer checks deliberately need no complete FHEM installation.
@@ -1962,19 +1962,56 @@ our @ISA = ('FHEM::APIs::Weather::GeoSphereAPI');
 =for :application/json;q=META.json GeoSphereAPI.pm
 {
   "abstract": "GeoSphere Austria observations, forecasts, nowcast and warnings for FHEM Weather",
-  "keywords": ["fhem-mod-device", "Weather", "API", "GeoSphere"],
-  "version": "v0.2.13",
+  "keywords": [
+    "Weather",
+    "API",
+    "GeoSphere",
+    "Austria",
+    "forecast",
+    "nowcast",
+    "weather warnings"
+  ],
+  "version": "v0.2.14",
   "release_status": "testing",
   "license": "GPL_2",
-  "author": ["GeoSphereAPI contributors"],
-  "x_fhem_maintainer": ["50watt"],
+  "author": [
+    "GeoSphereAPI contributors"
+  ],
+  "x_fhem_maintainer": [
+    "50watt"
+  ],
   "prereqs": {
     "runtime": {
       "requires": {
-        "perl": "5.016", "FHEM::Meta": 0, "HttpUtils": 0,
-        "JSON::PP": 0, "POSIX": 0, "Time::Local": 0,
-        "Scalar::Util": 0, "Encode": 0, "Unicode::Normalize": 0
+        "perl": "5.016",
+        "FHEM::Meta": 0,
+        "HttpUtils": 0,
+        "JSON::PP": 0,
+        "POSIX": 0,
+        "Time::Local": 0,
+        "Scalar::Util": 0,
+        "Encode": 0,
+        "Unicode::Normalize": 0,
+        "strict": 0,
+        "warnings": 0,
+        "utf8": 0
       }
+    }
+  },
+  "x_lang": {
+    "de": {
+      "abstract": "GeoSphere Austria Messwerte, Prognosen, Niederschlagsnowcast und Warnungen für FHEM Weather"
+    }
+  },
+  "resources": {
+    "homepage": "https://github.com/50watt/fhem-geosphere",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/50watt/fhem-geosphere.git",
+      "web": "https://github.com/50watt/fhem-geosphere"
+    },
+    "bugtracker": {
+      "web": "https://github.com/50watt/fhem-geosphere/issues"
     }
   }
 }

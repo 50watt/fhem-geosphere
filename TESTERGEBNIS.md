@@ -1,43 +1,32 @@
-# Testnachweis GeoSphereAPI 0.2.13
+# Testnachweis GeoSphereAPI 0.2.14
 
-28.10.2026, Perl 5.40.1, Python 3.13, Testzeitzone Europe/Vienna.
+31.10.2026, Perl 5.38.2, Python 3.12.14, Testzeitzone Europe/Vienna.
 Das Paket enthält ausschließlich den neuen Provider und seine Begleitdateien.
 Kein Weather-Patch und keine Tests gegen einen veränderten Weather-Kern.
 
 ## Erfolgreiche Prüfungen
 
-781 Perl-Assertions:
-- 81 allgemeine Provider-Tests, einschließlich abgefangener ungültiger
-  Standort-, Options- und Timeout-Konfigurationen sowie der optionalen
-  Nowcast-HTML-Darstellung, Balkenbegrenzung und HTML-Escaping.
-- 58 Stations-/Warnungstests.
-- 27 Höhen-/Auswahltests.
-- 39 Tests getrennter Prognosegültigkeit.
-- 34 Tests lokaler Zeit einschließlich DST.
-- 51 Nowcast-Tests.
-- 153 offizielle Symboltests.
-- 50 Review-Regressionen aus 0.2.6.
-- 9 Metadatenprüfungen einschließlich Maintainer 50watt.
-- 7 Winddarstellungsprüfungen für Nordwind bei 0/360 Grad, Windstille,
-  deutsche Himmelsrichtungen und fehlende Richtungs-/Geschwindigkeitswerte.
-- 74 neue Solar-/Taupunkt-/Tagesmengentests: optionale Felder, gültige Nullwerte,
-  unplausible/missing Werte, Kennzeichnung berechneter Taupunkte, Einheiten,
-  lokale Zeitgrenzen, getrennte Regen-/Schneemengen, richtige Mitternachts-
-  attribution, 23/25-Stunden-Tage, Teilabdeckung, fehlende Daten und eine
-  separate Tageszusammenfassung.
-- Je 99 Integrationsprüfungen mit unverändertem aktuellem Weather-Kern und
-  unveränderter monolithischer Weather-Referenz von 2022. Darin enthalten:
-  tatsächliche Veröffentlichung aller neuen Felder über den Weather-Rückruf
-  sowie ungültiger Standort, ungültige Höhe und ungültige Stationswahl. Deren
-  Fehler erscheinen als Readings, ohne aus `Weather Define` beziehungsweise
-  der Aktualisierung zu entweichen.
+801 Perl-Assertions:
+
+- 603 Prüfungen in elf Provider-Testsuiten. Darunter 27 Metadatenprüfungen
+  für Versionsgleichheit, Maintainer, Lizenz, Repository-/Supportlinks,
+  deutsche Beschreibung, Provider-Kennzeichnung und Laufzeitabhängigkeiten.
+- Je 99 Vertragstests mit unverändertem aktuellem Weather-Referenzkern und
+  unveränderter monolithischer Weather-Referenz von 2022. Geprüft werden
+  die Veröffentlichung der Felder sowie abgefangene Konfigurationsfehler.
+- Die Provider-Tests umfassen Stationswahl, Höhenlage, Prognosegültigkeit,
+  lokale Zeit/DST, Nowcast, Symbole, Winddarstellung und Solar-/Tagesmengen.
+
+Der Metadatenloader wird in `tests/metadata.t` simuliert. Die tatsächliche
+Package-Anzeige im produktiven FHEM Installer ist noch vor Ort zu prüfen.
 
 Ein Python-Installer-Testfall prüft mehrere Bedingungen:
 Syntaxprüfung vor Installation, Check-only ohne Änderungen, bytegenaue
 Sicherung beim Upgrade, installierte API identisch zur Quelldatei,
 unveränderter Weather-Kern und idempotente Wiederholung.
 
-Zusätzlich: perl -c und podchecker erfolgreich, Code mit Perl::Tidy formatiert.
+Zusätzlich: perl -c und podchecker erfolgreich. Die Wetterverarbeitung wurde
+bei diesem Metadatenupdate nicht geändert.
 Der frühere optionale Kernpatch-Testlauf wird nicht mehr mitgezählt.
 
 ## Lokaler FHEM-Integrationstest 0.2.10
@@ -99,7 +88,7 @@ Linux/SSH – im entpackten Paketverzeichnis als eigener Arbeitsschritt:
 TZ=Europe/Vienna python3 tests/run_all.py
 ~~~
 
-Erwartet: 781 erfolgreiche Perl-Assertions und ein erfolgreicher Python-
+Erwartet: 801 erfolgreiche Perl-Assertions und ein erfolgreicher Python-
 Installer-Testfall. Es wird kein produktiver FHEM-Server verändert.
 
 Linux/SSH – separater optionaler Live-Test:
@@ -119,5 +108,6 @@ private Automationen und Langzeitbetrieb sind vor Ort zu prüfen. 0.2.8 wurde
 vom Nutzer produktiv betrieben; 0.2.9 korrigiert die Veröffentlichung von
 `wind_condition`; 0.2.10 fängt Konfigurationsfehler im Provider ab. 0.2.11
 formatiert Stundenbeschriftungen kompakt; 0.2.12 ergänzt eine optionale
-Nowcast-HTML-Darstellung; 0.2.13 korrigiert deren UTF-8-Ausgabegrenze. Keine
+Nowcast-HTML-Darstellung; 0.2.13 korrigiert deren UTF-8-Ausgabegrenze. 0.2.14 ergänzt ausschließlich
+Metadaten und Versionsangaben. Keine
 Kernänderung ausgeführt.

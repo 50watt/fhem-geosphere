@@ -1,4 +1,4 @@
-# GeoSphereAPI 0.2.13 für FHEM Weather
+# GeoSphereAPI 0.2.14 für FHEM Weather
 
 Beta-Provider für österreichische Stationsmesswerte, Stundenprognosen,
 aggregierte Tagesprognosen, optionale Warnungen und 15-Minuten-Niederschlagsnowcast.

@@ -1,12 +1,35 @@
 # GeoSphereAPI für FHEM Weather
 
-Testversion 0.2.13 · Maintainer: **50watt**
+Testversion 0.2.14 · Maintainer: **50watt**
 
 GeoSphereAPI bringt österreichische Stationsmesswerte, Stundenprognosen und daraus
 abgeleitete Tagesprognosen, einen 15-Minuten-Niederschlagsnowcast und standortbezogene
 Wetterwarnungen in das FHEM-Weather-Modul. Ohne API-Schlüssel, mit automatischer
 Stationswahl unter Berücksichtigung der Entfernung und Höhenlage sowie
 nachvollziehbaren Angaben zu Datenalter und Gültigkeit.
+
+## Änderungen in 0.2.14
+
+- Ergänzt deutsche Beschreibung, Repository-, Homepage- und Fehlerbericht-Links
+  in den strukturierten FHEM-Metadaten.
+- Kennzeichnet GeoSphereAPI über passende Suchbegriffe als Weather-API-Provider.
+  Es ist kein eigenständig definierbares Device-Modul.
+- Vervollständigt die deklarierten Laufzeitabhängigkeiten. Keine zusätzliche
+  Paketinstallation und keine Änderung an Wetterabrufen, Readings oder Darstellung.
+- Teststatus bleibt `testing` / beta.
+
+### Anzeige im FHEM Installer
+
+Nach Update, Neustart und Laden des Providers in der FHEMWEB-Kommandozeile:
+
+```text
+get <Installer-Device> showPackageInfo GeoSphereAPI
+```
+
+GeoSphereAPI ist ein Package des Weather-Moduls. Deshalb wird die Package-Info
+verwendet, nicht `showModuleInfo`. Vorhandene Quellen für reguläre FHEM-Updates
+werden durch dieses Update nicht verändert. Eine Aufnahme in die reguläre
+FHEM-Distribution ist damit nicht verbunden.
 
 ## Änderungen in 0.2.13
 
@@ -108,7 +131,7 @@ zuverlässig neu. Direkt nach dem Neustart kann das Reading `apiVersion` noch di
 alte Version anzeigen: FHEM stellt zunächst die gespeicherten Readings wieder her.
 Erst bei einer Datenaktualisierung wird auch `apiVersion` neu geschrieben.
 Bei einem bestehenden GeoSphere-Gerät daher die nächste Datenaktualisierung
-abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.13`.
+abwarten und anschließend `apiVersion` prüfen: erwartet wird `0.2.14`.
 Bei einer Erstinstallation anschließend das Weather-Device definieren.
 
 ## Definition
@@ -255,7 +278,7 @@ Alternativ lässt sich die Station in FHEMWEB über das Dropdown des Attributs
 der Stationsmetadaten bereit.
 
 Erwartet nach der ersten Datenaktualisierung: `status=ok`, Stationsmesswerte,
-`apiVersion=0.2.13` und eine nachvollziehbare Standortquelle. Bei Variante 1
+`apiVersion=0.2.14` und eine nachvollziehbare Standortquelle. Bei Variante 1
 steht `locationSource=global`, bei Variante 2 und 3 `locationSource=device`.
 Weitere Attribute, Prognosen, Warnungen, Gültigkeit
 und bekannte Grenzen sind in [DOKUMENTATION.md](DOKUMENTATION.md) beschrieben.

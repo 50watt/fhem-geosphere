@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.14 – 2026-10-31 – beta, metadata
+
+- Complete structured repository, homepage and bugtracker resources.
+- Add a German abstract and provider-specific keywords, without claiming a device-module type.
+- Declare all directly imported runtime modules, including Perl pragmata.
+- Preserve package registration, testing status and weather processing behavior.
+- Extend metadata tests and synchronize update/release version references.
+
 ## 0.2.13 – 2026-10-28 – beta, API-only
 
 - Return `GeoSphereNowcastAsHtml` as UTF-8 octets at the FHEMWEB boundary,

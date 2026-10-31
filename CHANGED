@@ -1,3 +1,4 @@
+2026-10-31 GeoSphereAPI 0.2.14: Complete Installer metadata, German abstract and repository/support resources.
 2026-10-28 GeoSphereAPI 0.2.13: Preserve UTF-8 encoding across combined FHEMWEB weather views.
 2026-10-28 GeoSphereAPI 0.2.12: Add optional FHEMWEB chart for 15-minute precipitation nowcast.
 2026-10-28 GeoSphereAPI 0.2.11: Use compact localized weekday/time labels for hourly WeatherAsHtml forecasts.

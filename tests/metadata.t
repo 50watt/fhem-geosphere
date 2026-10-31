@@ -33,4 +33,14 @@ unlike(join(' ', @{$meta->{author}}), qr/prototype/i, 'prototype author removed 
 my $api=FHEM::APIs::Weather::GeoSphereAPI->new({devName=>'meta', location=>'48.2486,16.3564'});
 is($api->getWeather->{apiMaintainer}, '50watt (support: FHEM weather forum)', 'maintainer and support destination in API diagnostic');
 is_deeply($meta->{x_fhem_maintainer}, ['50watt'], 'confirmed maintainer in FHEM metadata');
+is($meta->{resources}{homepage}, 'https://github.com/50watt/fhem-geosphere', 'homepage declared');
+is($meta->{resources}{repository}{type}, 'git', 'repository type declared');
+is($meta->{resources}{repository}{url}, 'https://github.com/50watt/fhem-geosphere.git', 'clone URL declared');
+is($meta->{resources}{repository}{web}, 'https://github.com/50watt/fhem-geosphere', 'repository web URL declared');
+is($meta->{resources}{bugtracker}{web}, 'https://github.com/50watt/fhem-geosphere/issues', 'support destination declared');
+like($meta->{x_lang}{de}{abstract}, qr/GeoSphere Austria.*FHEM Weather/, 'German description declared');
+ok(!grep(/^fhem-mod(?:-|$)/, @{$meta->{keywords}}), 'Weather provider does not claim to be a device module');
+for my $dependency (qw(strict warnings utf8 JSON::PP POSIX Time::Local Scalar::Util Encode Unicode::Normalize FHEM::Meta HttpUtils)) {
+    ok(exists $meta->{prereqs}{runtime}{requires}{$dependency}, "runtime dependency declared: $dependency");
+}
 done_testing;
